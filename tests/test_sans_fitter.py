@@ -174,6 +174,11 @@ class TestModelSetup(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fitter.set_model('invalid_model_name_xyz')
 
+    def test_set_model_wrong_case_suggests_name(self):
+        """Test that a capitalized model name suggests the lower-case SasModels name."""
+        with self.assertRaisesRegex(ValueError, "Did you mean 'sphere'"):
+            self.fitter.set_model('Sphere')
+
     def test_model_parameters_structure(self):
         """Test that parameters have correct structure."""
         self.fitter.set_model('cylinder')

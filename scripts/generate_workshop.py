@@ -396,6 +396,8 @@ fitter.get_params()
 """
         if solution
         else """# `set_model` takes a SasModels model name as a string.
+# Names are lower case and match the SasView model list, e.g. 'cylinder':
+# https://www.sasview.org/docs/user/qtgui/Perspectives/Fitting/models/index.html
 # TODO: replace None with the model name for a homogeneous sphere.
 model_name = None
 if model_name is None:

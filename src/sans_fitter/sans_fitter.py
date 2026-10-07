@@ -1,5 +1,6 @@
 """Small fitting interface used by the SANS data analysis workshop."""
 
+import difflib
 import warnings
 from typing import Any, Literal, Optional
 
@@ -19,7 +20,7 @@ from sasmodels.bumps_model import Experiment
 from sasmodels.bumps_model import Model as BumpsModel
 
 # SasModels and SasData imports
-from sasmodels.core import load_model
+from sasmodels.core import list_models, load_model
 from sasmodels.direct_model import DirectModel
 
 from .results import PosteriorSummary
@@ -31,6 +32,26 @@ try:
 except ImportError:
     LMFIT_AVAILABLE = False
     warnings.warn('scipy not available. Only bumps engine will work.', stacklevel=2)
+
+
+def _model_name_hint(model_name: str) -> str:
+    """Return a short hint naming the SasModels models closest to ``model_name``."""
+    try:
+        available = list_models()
+    except Exception:  # pragma: no cover - suggestion is best effort only
+        return ''
+    if not isinstance(model_name, str):
+        return ". The model name must be a string, for example 'cylinder'"
+    exact = [name for name in available if name.lower() == model_name.lower()]
+    matches = exact or difflib.get_close_matches(model_name.lower(), available, n=3, cutoff=0.6)
+    hint = '. SasModels model names are lower case' if model_name != model_name.lower() else ''
+    if matches:
+        hint += '. Did you mean ' + ' or '.join(f"'{name}'" for name in matches) + '?'
+    else:
+        hint += (
+            '. See https://www.sasview.org/docs/user/qtgui/Perspectives/Fitting/models/index.html'
+        )
+    return hint
 
 
 class SANSFitter:
@@ -210,7 +231,8 @@ class SANSFitter:
             print(f'  Available parameters: {len(self.params)}')
 
         except Exception as e:
-            raise ValueError(f"Failed to load model '{model_name}': {str(e)}") from e
+            hint = _model_name_hint(model_name)
+            raise ValueError(f"Failed to load model '{model_name}': {str(e)}{hint}") from e
 
     def get_params(self) -> None:
         """Display current parameter values and settings in a readable format."""
