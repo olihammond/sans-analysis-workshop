@@ -1,0 +1,60 @@
+{
+  "seed": 20260929,
+  "datasets": {
+    "sphere_reference": {
+      "model": "sphere",
+      "parameters": {
+        "radius": 58.0,
+        "sld": 4.2,
+        "sld_solvent": 1.0,
+        "scale": 0.065,
+        "background": 0.0015
+      },
+      "sampling": {
+        "points": 90,
+        "qmin": 0.004,
+        "qmax": 0.35,
+        "relative_error": 0.04,
+        "error_floor": 0.00035
+      }
+    },
+    "mystery_shape": {
+      "model": "ellipsoid",
+      "parameters": {
+        "radius_polar": 125.0,
+        "radius_equatorial": 34.0,
+        "sld": 4.2,
+        "sld_solvent": 1.0,
+        "scale": 0.04,
+        "background": 0.0018
+      },
+      "sampling": {
+        "points": 105,
+        "qmin": 0.004,
+        "qmax": 0.32,
+        "relative_error": 0.055,
+        "error_floor": 0.00045
+      }
+    },
+    "interacting_spheres": {
+      "model": "sphere@hardsphere",
+      "parameters": {
+        "radius": 43.0,
+        "radius_effective": 48.0,
+        "radius_effective_mode": 0,
+        "volfraction": 0.27,
+        "sld": 4.2,
+        "sld_solvent": 1.0,
+        "scale": 0.055,
+        "background": 0.0012
+      },
+      "sampling": {
+        "points": 100,
+        "qmin": 0.004,
+        "qmax": 0.38,
+        "relative_error": 0.045,
+        "error_floor": 0.0003
+      }
+    }
+  }
+}
