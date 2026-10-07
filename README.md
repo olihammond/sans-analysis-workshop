@@ -18,8 +18,38 @@ By the end of the workshop, students should be able to:
 - fit SasModels form factors and inspect normalized residuals;
 - compare models using fit quality and physical plausibility;
 - explain how limited q coverage creates parameter and model ambiguity;
-- recognize when particle interactions require a structure factor.
+- recognize when particle interactions require a structure factor;
 - interpret posterior intervals, chain diagnostics, and predictive checks.
+
+## Connection to the lecture
+
+The workshop is the practical half of the lecture *Small-angle scattering: from
+principles to practice* (22 October 2026). Each notebook opens with a
+**Lecture connection** box that names the slides it builds on. Slide titles are
+quoted too, so the links survive renumbering.
+
+| Workbook | Builds on lecture slides |
+|---|---|
+| `00_start_here` | 8–9 Q and real space; 19–20 Guinier and power laws; 41–44 data reduction |
+| `01_fit_a_sphere` | 18 master equation; 21 form factor; 28–31 sample knowledge, fitting strategy, fit quality |
+| `02_model_detective` | 19 Guinier universality; 22–23 the SANS zoo, "name that shape"; 33 different models, similar fits |
+| `03_when_particles_interact` | 9 P(Q)·S(Q); 19 low-Q warning signs; 23–24 structure factor |
+| `04_bayesian_uncertainty` | 18 and 34 parameter degeneracy; 32 posteriors, correlations and bounds |
+
+Recommended reading for students:
+
+- C. J. Gommes, S. Jaksch & H. Frielinghaus, [*Small-angle scattering for
+  beginners*](https://pmc.ncbi.nlm.nih.gov/articles/PMC8662971/), J. Appl.
+  Cryst. 54, 1832 (2021).
+- C. A. Jacques & J. Trewhella, [*Small-angle scattering for structural
+  biology: expanding the frontier while avoiding the
+  pitfalls*](https://pmc.ncbi.nlm.nih.gov/articles/PMC2867006/), Protein Sci.
+  19, 642 (2010).
+- J. S. Pedersen, *Analysis of small-angle scattering data from colloids and
+  polymer solutions: modeling and least-squares fitting*, Adv. Colloid
+  Interface Sci. 70, 171 (1997).
+- [SasView model documentation](https://www.sasview.org/docs/user/qtgui/Perspectives/Fitting/models/index.html)
+  and the [SasView model marketplace](https://marketplace.sasview.org/).
 
 ## Start on VISA
 
