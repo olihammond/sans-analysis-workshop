@@ -265,11 +265,11 @@ with the sample composition, not only with the curve. Use this as a check.
 
 1. Choose a sample and read its card below. The card tells you what was put
    in the beam, but not what structure it formed.
-2. Before fitting, write down what you expect and why (lecture slide 28,
+2. Before fitting, write down what you expect and why (lecture slide 30,
    *Step 0: understand your sample*). Which length scales can you estimate from
    the chemistry alone?
 3. Analyse the curve model-free first: Guinier ($R_g$, $I(0)$), power-law
-   slopes, and peak positions (slides 19, 20, and 24).
+   slopes, and peak positions (slides 21, 22, and 26).
 4. Choose candidate models from the
    [SasView model list](https://www.sasview.org/docs/user/qtgui/Perspectives/Fitting/models/index.html)
    and fit them with `sans_fitter`. Fit at least two competing models.
@@ -294,19 +294,30 @@ Use the setup cell from any workshop notebook to define `ROOT` and import
   already contain the concentration. Keep `scale` fixed at 1 for those, or the
   two parameters will trade off against each other.
 - **Polydispersity.** Real samples are rarely monodisperse, and a size
-  distribution fills in form-factor minima (slide 21). You can give any size
+  distribution fills in form-factor minima (slide 23). You can give any size
   parameter a Gaussian distribution and fit its width:
 
   ```python
   fitter.set_polydispersity('radius', width=0.1, min=0.0, max=0.4, vary=True)
   ```
 
+  Size and polydispersity are strongly correlated (slide 34): a larger particle
+  with a narrower distribution can look like a smaller one with a broader
+  distribution. Report both, and say whether outside knowledge constrains either.
+
 - **Background.** The flat high-q level comes mainly from incoherent
-  scattering of hydrogen (slide 14). Is its size consistent with the solvent?
+  scattering of hydrogen (slide 15). Is its size consistent with the solvent?
 - **Structure factors.** `set_structure_factor('hardsphere')` and the others
   from notebook 03 work with any spherical form factor.
 - **Reduced χ².** Use `engine='bumps'` to get χ²/(N − p) directly, or divide the
-  `lmfit` value by N − p yourself.
+  `lmfit` value by N − p yourself. Judge it together with the residuals
+  (slide 33).
+- **Kratky plot.** Plotting $I\\cdot Q^2$ against $Q$ (slide 50) quickly
+  separates compact objects (a peak), flexible chains (a plateau) and rods (a
+  steady rise).
+- **Real examples.** Part 4 of the lecture (slides 50–54) shows how polymers,
+  self-assembled systems, lipid particles and precipitates are analysed in
+  practice. Use it to choose candidate models.
 
 ## Report structure
 

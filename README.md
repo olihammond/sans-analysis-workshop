@@ -24,17 +24,19 @@ By the end of the workshop, students should be able to:
 ## Connection to the lecture
 
 The workshop is the practical half of the lecture *Small-angle scattering: from
-principles to practice* (22 October 2026). Each notebook opens with a
+principles to practice* (22 October 2026; slide numbers follow the
+`221026_OH_SANS1_ed` version of the deck). Each notebook opens with a
 **Lecture connection** box that names the slides it builds on. Slide titles are
 quoted too, so the links survive renumbering.
 
 | Workbook | Builds on lecture slides |
 |---|---|
-| `00_start_here` | 8–9 Q and real space; 19–20 Guinier and power laws; 41–44 data reduction |
-| `01_fit_a_sphere` | 18 master equation; 21 form factor; 28–31 sample knowledge, fitting strategy, fit quality |
-| `02_model_detective` | 19 Guinier universality; 22–23 the SANS zoo, "name that shape"; 33 different models, similar fits |
-| `03_when_particles_interact` | 9 P(Q)·S(Q); 19 low-Q warning signs; 23–24 structure factor |
-| `04_bayesian_uncertainty` | 18 and 34 parameter degeneracy; 32 posteriors, correlations and bounds |
+| `00_start_here` | 9–10 Q and real space; 21–22 Guinier and power laws; 41 resolution; 43–46 data reduction |
+| `01_fit_a_sphere` | 20 master equation; 23 form factor; 30–33 sample knowledge, fitting strategy, fit quality |
+| `02_model_detective` | 21 Guinier universality; 24–25 the SANS zoo, "name that shape"; 34 model choice as a prior; 50 same Rg, different shape |
+| `03_when_particles_interact` | 10 P(Q)·S(Q); 21 low-Q warning signs; 25–26 structure factor; 51 micelles as P(Q)·S(Q) |
+| `04_bayesian_uncertainty` | 20 and 35 parameter degeneracy; 34 priors and bounds |
+| `mystery_data` | 30 Step 0; 21–26 model-free analysis and models; 33–34 fit quality and uncertainty; 50–54 real examples |
 
 Recommended reading for students:
 

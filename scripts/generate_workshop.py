@@ -256,9 +256,9 @@ reduced, radially averaged curve. Keep the lecture slides open beside you.
 
 | Today's task | Lecture slides |
 |---|---|
-| Convert q to a real-space length | 8 *Scattering geometry*, 9 *Real and Q-space* |
-| Read the shape of a log–log curve | 19 *Guinier analysis*, 20 *Power law slopes* |
-| Know what "reduced data" has already been through | 41–44 *Data reduction* … *When data look wrong* |
+| Convert q to a real-space length | 9 *Scattering geometry*, 10 *Real and Q-space* |
+| Read the shape of a log–log curve | 21 *Guinier analysis*, 22 *Power law slopes* |
+| Know what "reduced data" has already been through | 41 *Q-range and resolution*, 43–46 *Data reduction* … *When data look wrong* |
 
 **Notation.** The lecture writes the scattering vector as $Q$; the code and data
 files write `q` or `Q`. They are the same quantity,
@@ -301,8 +301,8 @@ Write a one-sentence prediction for each in the answer cell below.
 
 *Hints from the lecture:* intensity typically falls by several orders of
 magnitude over the measured range, and power laws $I \\propto Q^{-m}$ become
-straight lines of slope $-m$ on log–log axes (slide 20). Size information sits
-where $Q \\sim 2\\pi/d$ for the whole particle, i.e. at the low-q end (slide 19)."""
+straight lines of slope $-m$ on log–log axes (slide 22). Size information sits
+where $Q \\sim 2\\pi/d$ for the whole particle, i.e. at the low-q end (slide 21)."""
         ),
         answer(
             solution,
@@ -328,13 +328,13 @@ Use the lecture's reading guide on the plot above, moving from left to right:
 
 - **Low-q plateau (Guinier region).** For $Q R_g \\lesssim 1.3$ the whole
   particle scatters almost in phase, $I(Q) \\approx I(0)\\exp(-Q^2R_g^2/3)$, and
-  the curve flattens. For a solid sphere $R_g = \\sqrt{3/5}\\,R$ (slide 19).
+  the curve flattens. For a solid sphere $R_g = \\sqrt{3/5}\\,R$ (slide 21).
 - **Oscillations (form factor).** Sharp minima mean nearly identical particles.
-  For a sphere the first minimum sits at $Q_1 R \\approx 4.49$ (slide 21).
+  For a sphere the first minimum sits at $Q_1 R \\approx 4.49$ (slide 23).
 - **High-q decay.** Smooth, sharp interfaces give the Porod envelope
-  $I \\propto Q^{-4}$ (slide 20).
+  $I \\propto Q^{-4}$ (slide 22).
 - **Flat floor at the highest q.** Background, mostly incoherent scattering
-  from hydrogen, which is $Q$-independent to a good approximation (slide 14).
+  from hydrogen, which is $Q$-independent to a good approximation (slide 15).
 
 Mark each region on a sketch of your plot. Read off $Q_1$ as accurately as you
 can and estimate the particle radius. You will need this number as a starting
@@ -350,15 +350,20 @@ at the point where a scientific model is compared with those reduced data.
 Two consequences matter for the rest of the afternoon:
 
 1. **Units.** In the lecture, $I(Q)$ is an absolute cross-section in cm⁻¹ and
-   the master equation (slide 18) lets you check the fitted volume fraction.
+   the master equation (slide 20) lets you check the fitted volume fraction.
    These workshop data are in *arbitrary units*, so the fitted `scale`
    parameter absorbs the volume fraction *and* any calibration factor.
-2. **Reduction artefacts look like physics.** Slide 44 (*When data look
+2. **Reduction artefacts look like physics.** Slide 46 (*When data look
    wrong…*) is a useful diagnostic when a residual pattern puzzles you: a
    discrepancy at high q only suggests a flat or weak-signal term (cell,
    background); a constant factor everywhere suggests normalization, thickness,
    transmission or calibration; a change of shape suggests inconsistent
-   subtraction. The synthetic data here are clean, but real data rarely are."""
+   subtraction. The synthetic data here are clean, but real data rarely are.
+3. **Resolution.** Reduced files from a real instrument often carry a fourth
+   column, `dQ`, the q resolution of each point (slide 41). When it is present,
+   `sans_fitter` (like SasView) smears the model with it automatically, so sharp
+   minima are compared fairly. The workshop files have no `dQ` column, so no
+   smearing is applied."""
         ),
         markdown(
             f"""## Further reading
@@ -471,16 +476,16 @@ You will connect the analytical sphere amplitude to a SasModels fit, choose
 bounds, and diagnose the result using normalized residuals."""
         ),
         connection(
-            """- Slide 18, *The SANS master equation*: the model you fit is this equation
+            """- Slide 20, *The SANS master equation*: the model you fit is this equation
   with $S(Q)=1$ (dilute particles).
-- Slide 21, *The form factor, P(Q)*: the phase-map picture of why a sphere
+- Slide 23, *The form factor, P(Q)*: the phase-map picture of why a sphere
   gives minima at $QR \\approx 4.49, 7.73, \\ldots$ Rewatch the
   [phase-map video]("""
             + PHASE_MAP_VIDEO
             + """) if the formula below feels abstract.
-- Slides 28 and 30, *Step 0: understand your sample* and *Fitting strategy*:
+- Slides 30 and 32, *Step 0: understand your sample* and *Fitting strategy*:
   where defensible starting values and bounds come from.
-- Slide 31, *Is my fit good or not?*: what this notebook asks you to judge."""
+- Slide 33, *Is my fit good or not?*: what this notebook asks you to judge."""
         ),
         code(SETUP),
         code(
@@ -504,13 +509,13 @@ the amplitude function. Ignore absolute scaling in this first visual test.
 **How this maps onto the lecture.** SasModels writes the sphere as
 $I(q) = \frac{\mathrm{scale}}{V}\,\left[3V\Delta\rho\,\frac{\sin(qr)-qr\cos(qr)}{(qr)^3}\right]^2
 + \mathrm{background}$, which is the expression above. Compare it with the
-master equation on slide 18,
+master equation on slide 20,
 $I(Q) = \phi\,V_p\,(\Delta\rho)^2\,P(Q)\,S(Q) + \mathrm{bkg}$, where
 $P(Q) = F(Q)^2$ is normalized so that $P(0)=1$. For dilute particles $S(Q)=1$,
 and on an absolute scale `scale` *is* the volume fraction $\phi$. Because the
 workshop data are in arbitrary units, `scale` here also absorbs a calibration
 factor. That is one face of the $\phi \leftrightarrow \Delta\rho \leftrightarrow
-\mathrm{scale}$ degeneracy from the lecture's part 2 wrap-up (slide 34). We fix
+\mathrm{scale}$ degeneracy from the lecture's part 2 wrap-up (slide 35). We fix
 both SLDs so that `scale` carries the rest.
 
 *Hint for the volume question:* write $V$ in terms of $r$."""
@@ -531,15 +536,15 @@ plt.show()
 
 Change `trial_radius` until the first minimum of your trial curve lines up
 with the first minimum of the data. Then check yourself with the lecture's
-rule of thumb (slide 21): the first zero of $F(qr)$ is at $qr \\approx 4.493$,
+rule of thumb (slide 23): the first zero of $F(qr)$ is at $qr \\approx 4.493$,
 so $r \\approx 4.49/q_1$.
 
 - The lecture's worked example used $R = 80$ Å, with minima at
   $Q = 0.0562, 0.0966, 0.136$ Å⁻¹. Are the data minima to the left or right of
   those? Is this sphere bigger or smaller than 80 Å?
 - Why are the data minima not exactly zero? Think about noise, the background,
-  and, for real samples, polydispersity and instrumental resolution (slide 21's
-  dQ/Q panels and slide 39).
+  and, for real samples, polydispersity and instrumental resolution (slide 23's
+  dQ/Q panels and slide 41).
 
 The radius you read off here is a *model-free* first estimate. Use it as the
 starting value in the fit below rather than guessing."""
@@ -590,18 +595,19 @@ Keep both SLDs fixed. Choose and justify a starting value and bounds for
 radius, scale and background, using the table below. There is no single right
 answer; defensible numbers are what matter.
 
-**Where do defensible numbers come from?** The lecture's *Step 0* (slide 28)
+**Where do defensible numbers come from?** Slide 33 says it directly: *start
+from the data, not a guess*. The lecture's *Step 0* (slide 30)
 is to know what you put in the beam. In practice:
 
 | Parameter | Lecture source for a starting value | Sensible bounds reflect… |
 |---|---|---|
-| `sld`, `sld_solvent` | Composition and density via an SLD calculator (slide 11) | fixed: known independently |
-| `radius` | First minimum, $r \\approx 4.49/q_1$ (slide 21), or Guinier, $R = \\sqrt{5/3}\\,R_g$ (slide 19) | synthesis, TEM, or DLS knowledge |
-| `scale` | Height of the low-q plateau, $I(0) \\propto \\phi V \\Delta\\rho^2$ (slide 18) | concentration and calibration |
-| `background` | Level of the flat high-q floor (slide 14) | must be ≥ 0 and below the data |
+| `sld`, `sld_solvent` | Composition and density via an SLD calculator (slide 12) | fixed: known independently |
+| `radius` | First minimum, $r \\approx 4.49/q_1$ (slide 23), or Guinier, $R = \\sqrt{5/3}\\,R_g$ (slide 21) | synthesis, TEM, or DLS knowledge |
+| `scale` | Height of the low-q plateau, $I(0) \\propto \\phi V \\Delta\\rho^2$ (slide 20) | concentration and calibration |
+| `background` | Level of the flat high-q floor (slide 15) | must be ≥ 0 and below the data |
 
 The SLD values used here are 4.2 for the particle and 1.0 for the solvent, in
-units of 10⁻⁶ Å⁻², the "SLD units" of slide 11."""
+units of 10⁻⁶ Å⁻², the "SLD units" of slide 12."""
         ),
         code(params + '\nfitter.get_params()\n'),
         markdown(
@@ -621,9 +627,10 @@ $$
 
 Each term in brackets is a **normalized residual**: the misfit at one point,
 measured in units of its own uncertainty. That is why `dI` matters (notebook
-00). For a good model with correct error bars, about 68 % of normalized
-residuals should lie between −1 and +1, few should exceed ±3, and they should
-show no pattern along q ([SasView: *Assessing fit quality*]("""
+00). As slide 33 puts it, good residuals scatter randomly around 0, mostly
+within ±2, and change sign roughly every other point (about $N/2$ sign changes
+for $N$ points). Structure in the residuals is the diagnostic, more than the χ²
+number ([SasView: *Assessing fit quality*]("""
             + SASVIEW_FIT_QUALITY
             + """)).
 
@@ -649,14 +656,16 @@ Record:
 - any fitted parameter touching a bound;
 - one experimental systematic that this model ignores.
 
-**Checklist for "is my fit good?" (slide 31).**
+**Checklist for "is my fit good?" (slide 33).**
 
 1. *Residuals:* scattered around zero with no runs or waves? A wave that
    follows the form-factor oscillations means the shape or size distribution
    is wrong, not the noise.
-2. *Statistic:* is the reduced χ², $\\chi^2/(N-p)$, close to 1? Much larger
+2. *Statistic:* is the reduced χ², $\\chi^2_\\nu = \\chi^2/\\nu$ with
+   $\\nu = N-p$, within about $1 \\pm \\sqrt{2/\\nu}$ (slide 33)? Much larger
    means a missing ingredient or underestimated `dI`. Much smaller means
-   overestimated `dI` or overfitting.
+   overestimated `dI` or overfitting. A χ²ν of 1 with a long run of positive
+   residuals is still a bad fit: χ² mixes the model and the error bars.
 3. *Bounds:* a parameter pinned at a bound has not been determined. The
    bound has decided it.
 4. *Plausibility:* does the radius agree with your model-free estimate from
@@ -667,9 +676,9 @@ Record:
             + SASVIEW_POLYDISPERSITY
             + """)) and instrumental smearing ([SasView resolution]("""
             + SASVIEW_RESOLUTION
-            + """)). Both fill in the minima (slide 21 shows 0, 5 and 10 % dQ/Q). The
+            + """)). Both fill in the minima (slide 23 shows 0, 5 and 10 % dQ/Q). The
 lecture also covered reduction errors in transmission, empty-cell subtraction
-and thickness (slides 42 and 44), and interparticle interactions, $S(Q) \\neq 1$
+and thickness (slides 44 and 46), and interparticle interactions, $S(Q) \\neq 1$
 (notebook 03). These synthetic data were generated without any of them. That is
 why the minima are so sharp. Say which one you would expect to matter most for a
 real measurement, and why."""
@@ -681,18 +690,28 @@ for name in ['radius', 'scale', 'background']:
     print(name, result['parameters'][name]['formatted'])
 
 # Reduced chi-squared: the sum of squared normalized residuals divided by
-# (number of data points - number of fitted parameters). About 1 is good.
+# nu = (number of data points - number of fitted parameters).
 n_points = np.count_nonzero(~fitter.data.mask)
-n_fitted = 3
-print('Reduced chi-squared:', result['chisq'] / (n_points - n_fitted))
+nu = n_points - 3
+print(f"Reduced chi-squared: {result['chisq'] / nu:.2f} "
+      f'(expected 1 ± {np.sqrt(2 / nu):.2f} for nu = {nu})')
+
+# The two residual checks from slide 33, using the data and fitted model.
+_, data_I, data_dI, model_I = fitter._fit_arrays()
+residuals = (data_I - model_I) / data_dI
+sign_changes = np.count_nonzero(np.diff(np.sign(residuals)))
+print(f'Residuals within ±2: {np.mean(np.abs(residuals) < 2):.0%}')
+print(f'Sign changes: {sign_changes} (random scatter gives about {n_points // 2})')
 """
         ),
         answer(
             solution,
             """The fitted radius is about 58.0 ± 0.02 Å, matching the first-minimum
 estimate $4.49/q_1$. The residuals scatter randomly around zero with no wave
-following the oscillations, the reduced χ² is about 0.8, and no parameter sits on
-a bound. The model ignores polydispersity and instrumental resolution. For a real
+following the oscillations: 97 % lie within ±2 and they change sign 49 times,
+close to the $N/2 \\approx 45$ expected for random scatter. The reduced χ² of
+0.76 is slightly below the expected 1 ± 0.15, so the error bars are, if
+anything, a little generous. No parameter sits on a bound. The model ignores polydispersity and instrumental resolution. For a real
 sample these would fill in the minima, and the quoted ± 0.02 Å would be far too
 optimistic.""",
             'Record the four points listed above and interpret the fit in two or three sentences.',
@@ -705,7 +724,8 @@ the local optimizer reach the same answer? Compare it with BUMPS differential
 evolution, `fitter.fit(engine='bumps', method='de', steps=200)`. What does this
 reveal about optimization versus inference?
 
-*Why this happens:* the χ² surface of a form factor is full of local minima.
+*Why this happens:* as slide 33 warns, a fit started far from the answer can be
+trapped in a local minimum. The χ² surface of a form factor is full of them.
 A sphere of 15 Å puts its first minimum near $4.49/15 \\approx 0.3$ Å⁻¹, so
 a downhill search starting there can lock onto the wrong oscillation.
 [Differential evolution]("""
@@ -713,7 +733,7 @@ a downhill search starting there can lock onto the wrong oscillation.
             + """#differential-evolution) keeps a population of candidates spread over
 the whole prior box, so it is far less sensitive to the start. Neither method
 tells you *how well* the radius is determined. That question, the theme of slide
-32 (*How can uncertainties help*), is taken up in notebook 04.
+34 (*Deeper into uncertainty*), is taken up in notebook 04.
 
 Remember the χ² note above when you compare the two engines' numbers.
 
@@ -862,18 +882,21 @@ The file name deliberately reveals nothing about the generating model. Split
 the work: one partner advocates for a sphere, the other for an ellipsoid."""
         ),
         connection(
-            """- Slide 22, *Welcome to the SANS zoo*: many shapes share a plateau and a
+            """- Slide 24, *Welcome to the SANS zoo*: many shapes share a plateau and a
   decay and differ in oscillation depth and mid-q slope. Browse the
   [SasView model marketplace]("""
             + SASVIEW_MARKETPLACE
             + """) for the full zoo.
-- Slide 23, *Name that shape!*: panels B and C "look alike over a narrow
+- Slide 25, *Name that shape!*: panels B and C "look alike over a narrow
   Q-window", and an extended Q-range shows the difference. This notebook is
   that statement made quantitative.
-- Slide 19, *Guinier analysis*: the $R_g$ table. Every shape looks the same at
+- Slide 21, *Guinier analysis*: the $R_g$ table. Every shape looks the same at
   low Q apart from $I(0)$ and $R_g$.
-- Slide 33, *Different models, similar fits*: bring your figures from this
-  notebook to the plenary discussion."""
+- Slide 34, *Deeper into uncertainty*: "choosing a model is also a prior. When
+  two models fit equally well, physics and sample knowledge decide, not χ²."
+  Bring your figures from this notebook to the plenary discussion.
+- Slide 50, *Polymers*: a sphere, a coil and a rod with the *same* $R_g$ cannot
+  be told apart at low Q. Guinier only sees size; the shape lives at higher Q."""
         ),
         code(SETUP),
         code(
@@ -889,7 +912,7 @@ plt.show()
         markdown(
             """### Look before you fit
 
-The lecture's fitting strategy (slide 30) starts with reading the data, not
+The lecture's fitting strategy (slide 32) starts with reading the data, not
 with the optimizer. Compare this curve with `sphere_reference.csv` from
 notebook 01:
 
@@ -897,7 +920,7 @@ notebook 01:
   can mean polydispersity or smearing, but also **anisotropy**: an
   orientationally averaged ellipsoid has a different dimension in every
   direction, so its minima fall at different q and blur together.
-- Where does the plateau bend over, and what slope follows it (slide 20)?
+- Where does the plateau bend over, and what slope follows it (slide 22)?
   A very long object would show an extended $Q^{-1}$ region. A moderately
   elongated one shows only a hint of it.
 - Notice that these data are noisier than in notebook 01. How might that
@@ -953,7 +976,7 @@ print('Restricted sphere radius:', sphere_short_result['parameters']['radius']['
 
 The lecture called the Guinier law *universal*: at low Q every shape gives
 $I(Q) \\approx I(0)\\exp(-Q^2R_g^2/3)$, which is valid for $QR_g \\lesssim 1.3$
-(slide 19). In that region the data carry essentially **two numbers**, $I(0)$
+(slide 21). In that region the data carry essentially **two numbers**, $I(0)$
 and $R_g$. Any model that can reproduce those two numbers fits equally well.
 
 The cell below tests this with your fitted parameters, using
@@ -1024,16 +1047,16 @@ the distinction stronger.
 Follow-up measurements from the lecture to consider:
 
 - **Extend q.** A shorter detector distance or a shorter wavelength raises
-  $Q_{\\max}$ (slides 8 and 37–39). Ask which q range the shape information
+  $Q_{\\max}$ (slides 9 and 39–41). Ask which q range the shape information
   lives in.
-- **Change the contrast.** H/D variation (slides 13 and 15) changes $\\Delta\\rho$
+- **Change the contrast.** H/D variation (slides 14 and 16) changes $\\Delta\\rho$
   and so constrains the scale–contrast degeneracy, but does contrast alone
   change the *shape* of the curve for a homogeneous particle?
-- **Complementary techniques.** Slide 6 asked when SANS and TEM would disagree
+- **Complementary techniques.** Slide 7 asked when SANS and TEM would disagree
   about a size. Here, what could a micrograph settle that SANS cannot, and
   what could it get wrong?
 - **Field or flow alignment.** Anisotropic objects give anisotropic 2D
-  patterns when aligned (compare slide 27): a radially averaged 1D curve has
+  patterns when aligned (compare slide 29): a radially averaged 1D curve has
   thrown that information away."""
         ),
         conclusion,
@@ -1160,14 +1183,16 @@ Start with the simplest plausible particle model. Use the residual pattern as a
 clue before adding complexity."""
         ),
         connection(
-            """- Slide 9, *Real and Q-space*: "the blob sets the envelope, the arrangement
+            """- Slide 10, *Real and Q-space*: "the blob sets the envelope, the arrangement
   sets the sharp structure". This is the $P(Q)\\cdot S(Q)$ split.
-- Slide 24, *The structure factor, S(Q)*: hard-sphere repulsion suppresses
+- Slide 26, *The structure factor, S(Q)*: hard-sphere repulsion suppresses
   low-Q intensity and creates a correlation peak near $Q^* \\approx 2\\pi/\\sigma$.
-- Slide 19, *Guinier analysis*: a low-Q **downturn** is the warning sign for
+- Slide 21, *Guinier analysis*: a low-Q **downturn** is the warning sign for
   repulsive interactions. An upturn suggests aggregation.
-- Slide 23, *Name that shape!*, panel D: concentrated spheres. Dilute the
-  sample, and if the peak disappears it was $S(Q)$."""
+- Slide 25, *Name that shape!*, panel D: concentrated spheres. Dilute the
+  sample, and if the peak disappears it was $S(Q)$.
+- Slide 51, *Self-assembly*: real micelles are fitted with exactly this
+  combination, core–shell $P(Q)$ × hard-sphere $S(Q)$."""
         ),
         code(SETUP),
         code(
@@ -1186,13 +1211,13 @@ plt.show()
 Compare this curve with the dilute sphere from notebook 01.
 
 1. What happens at the lowest q: plateau, downturn or upturn? What does
-   slide 19 say each one means?
+   slide 21 say each one means?
 2. Find the q position of the bump, $Q^*$. Convert it to a real-space
    distance, $2\\pi/Q^*$. Is that distance closer to a particle *radius*, a
-   *diameter*, or neither? (Slide 24: the first peak sits near
+   *diameter*, or neither? (Slide 26: the first peak sits near
    $Q^* \\approx 6/\\sigma$, where $\\sigma = 2R_{hs}$ is the contact distance.)
 3. Is the bump a feature of one particle or of the arrangement of many?
-   Name the experiment that would tell you (slide 9's discussion prompt)."""
+   Name the experiment that would tell you (slide 10's discussion prompt)."""
         ),
         markdown(
             """## Exercise 1 — Deliberately incomplete model
@@ -1201,11 +1226,11 @@ Using the same steps as in notebook 01, fit the simplest plausible model, a
 dilute sphere. Locate the structured residual region. Why can changing
 radius or scale not independently repair it?
 
-*Hint:* the lecture's "four knobs" (slide 18). Concentration, contrast and
+*Hint:* the lecture's "four knobs" (slide 20). Concentration, contrast and
 scale only move the whole curve **up or down**. Size moves features **left or
 right** and also changes $I(0) \\propto V$. Neither move can lower the
 intensity at low q while raising it at $Q^*$. Also predict what a Guinier
-analysis of these data would give for the size (slide 24: "Guinier analysis on
+analysis of these data would give for the size (slide 26: "Guinier analysis on
 a concentrated sample under-estimates the size")."""
         ),
         code(dilute_fit),
@@ -1223,10 +1248,10 @@ Fit both new parameters freely. A third new parameter,
 `radius_effective_mode`, only selects how the effective radius is calculated;
 leave it fixed.
 
-**What is being multiplied in.** This is the full master equation of slide 18,
+**What is being multiplied in.** This is the full master equation of slide 20,
 $I(Q) = \\phi V \\Delta\\rho^2 P(Q)\\,S(Q) + \\mathrm{bkg}$, now with $S(Q) \\neq 1$.
 $S(Q)$ is the Fourier transform of the pair correlation function $g(r)$:
-"the form factor of the neighbours" (slide 24). The `hardsphere` model uses
+"the form factor of the neighbours" (slide 26). The `hardsphere` model uses
 the Percus–Yevick closure for particles that cannot overlap
 ([SasView `hardsphere`]("""
             + SASVIEW_MODEL.format('hardsphere')
@@ -1239,7 +1264,7 @@ the Percus–Yevick closure for particles that cannot overlap
   match the bump position you read off above?
 
 *Physicists:* this is the same $S(Q)$ as for an atomic liquid, with each
-colloidal particle playing the role of an atom (slide 24)."""
+colloidal particle playing the role of an atom (slide 26)."""
         ),
         code(interacting_fit),
         code(comparison),
@@ -1256,15 +1281,15 @@ Notes for these questions:
 
 - For question 2, think about what surrounds a real colloid: a stabilizer or
   surfactant shell, a hydration layer, or a counter-ion cloud. Charged
-  particles repel over longer distances, and slide 24 notes that screened
+  particles repel over longer distances, and slide 26 notes that screened
   charges (Hayter–Penfold/MSA) produce peaks at much lower concentration.
   Is the shell visible to the *form factor* at the given contrast?
 - For question 3, the hard-sphere model assumes monodisperse, spherical,
   purely repulsive particles. Attractive interactions *raise* $S(0)$ instead
-  (slide 24), and the "decoupling" of $P(Q)$ and $S(Q)$ is an approximation
+  (slide 26), and the "decoupling" of $P(Q)$ and $S(Q)$ is an approximation
   for polydisperse or anisotropic particles.
 - For question 4, the cell below repeats the fit with the interaction radius
-  tied to the particle radius, as on slide 24. Compare its residuals and χ²
+  tied to the particle radius, as on slide 26. Compare its residuals and χ²
   with the free fit above."""
         ),
         code(
@@ -1294,10 +1319,10 @@ Sketch a decision tree for an unfamiliar curve: data checks, simplest form
 factor, residual diagnosis, alternative shapes, q-range sensitivity, and only
 then interaction models. Name one conclusion that SANS alone cannot establish.
 
-Use the lecture's *Step 0* and *Fitting strategy* (slides 28 and 30) as the
+Use the lecture's *Step 0* and *Fitting strategy* (slides 30 and 32) as the
 root of your tree: know the composition, concentration, charge and likely
 sizes first. Then use the model-free looks (Guinier, power-law slopes,
-Kratky, P(r); slides 19, 20 and 25) before model fitting. Bring your tree to
+Kratky, P(r); slides 21, 22, 50 and 27) before model fitting. Bring your tree to
 the plenary discussion."""
         ),
         markdown(
@@ -1306,7 +1331,7 @@ the plenary discussion."""
 - [SasView `hardsphere` model]({SASVIEW_MODEL.format('hardsphere')}): the
   Percus–Yevick structure factor used here.
 - [SasView `hayter_msa` model]({SASVIEW_MODEL.format('hayter_msa')}): the
-  Hayter–Penfold structure factor for charged particles mentioned on slide 24.
+  Hayter–Penfold structure factor for charged particles mentioned on slide 26.
 - J. S. Pedersen, Adv. Colloid Interface Sci. 70, 171 (1997): the section on
   concentrated systems and the decoupling approximation."""
         ),
@@ -1448,13 +1473,15 @@ you will sample a distribution of plausible parameter combinations using the
 DREAM Markov chain Monte Carlo algorithm."""
         ),
         connection(
-            """- Slide 32, *How can uncertainties help: posteriors, correlations and bounds*:
-  this notebook produces exactly those three objects for the sphere from
-  notebook 01.
-- Slide 34, *Wrap-up for part 2*: "several of these parameters are
+            """- Slide 34, *Deeper into uncertainty: priors and bounds*: every fit has
+  priors (the bounds, the model, the q range you kept); a bound is a uniform
+  prior; a posterior pressed against a bound means the bound, not the data,
+  chose the answer; a restricted q range destroys information. This notebook
+  lets you test each of these on the sphere from notebook 01.
+- Slide 35, *Wrap-up for part 2*: "several of these parameters are
   degenerate ($\\phi \\leftrightarrow \\Delta\\rho \\leftrightarrow$ scale)". Here
   you will *see* a degeneracy as a tilted cloud in a pair plot.
-- Slide 18's discussion: concentration and contrast move the curve up and
+- Slide 20's discussion: concentration and contrast move the curve up and
   down, while size moves it left and right. Keep that picture in mind when
   you predict the correlations below.
 - Notebook 02's non-identifiability is the extreme case of what you measure
@@ -1489,11 +1516,11 @@ standard deviation `dI`, then
 $p(D \\mid \\theta) \\propto \\exp(-\\chi^2(\\theta)/2)$, with the same $\\chi^2$ you
 minimized in notebook 01. The best fit is the peak of this function. Sampling
 maps out its whole shape. This is why correct error bars from data reduction
-(slides 42–43) matter even more here than for a point estimate.
+(slides 44–45) matter even more here than for a point estimate.
 
 **Fixing the SLDs is itself a prior.** It is a delta-function prior that
-breaks the $\\phi \\leftrightarrow \\Delta\\rho$ degeneracy of slide 34 by fiat.
-Ask yourself how confident you really are in those numbers (slide 11's
+breaks the $\\phi \\leftrightarrow \\Delta\\rho$ degeneracy of slide 35 by fiat.
+Ask yourself how confident you really are in those numbers (slide 12's
 caveats about density and exchangeable hydrogens)."""
         ),
         code(configure_model),
@@ -1544,10 +1571,10 @@ the data constrain together. For example, particle contrast, concentration,
 and scale can compensate for one another.
 
 **Predict before plotting.** With both SLDs fixed, the plateau height is
-$I(0) \\propto \\mathrm{scale}\\cdot V \\propto \\mathrm{scale}\\cdot r^3$ (slide 18).
+$I(0) \\propto \\mathrm{scale}\\cdot V \\propto \\mathrm{scale}\\cdot r^3$ (slide 20).
 If the data pin $I(0)$ tightly, which sign of correlation do you expect between
 `scale` and `radius`? Is it strong, given that the *positions* of the minima
-pin the radius independently (slide 21)? Which parameter should be most
+pin the radius independently (slide 23)? Which parameter should be most
 correlated with `background`, and in which q region do they compete?"""
         ),
         code(posterior_plots),
@@ -1561,7 +1588,7 @@ observations across q, and where predictions remain uncertain.
 
 Look especially at the form-factor minima and at the highest q, where the
 signal approaches the background. Relate what you see to the lecture's point
-that resolution and polydispersity fill in minima (slide 21). If those effects
+that resolution and polydispersity fill in minima (slide 23). If those effects
 were present but missing from the model, would the posterior band be wider,
 narrower, or simply in the wrong place?"""
         ),
@@ -1591,10 +1618,15 @@ fitter.save_results('sphere_bayesian_fit.csv')
 Try changing one prior range or restricting q. Rerun the sampler and explain
 whether the posterior changed because of the data or because of the prior.
 
-*Suggested experiment:* restrict q to `0.004–0.025 Å⁻¹`, as in notebook 02,
-with `fitter.set_q_range(qmin=0.004, qmax=0.025)`, and rerun. Which posterior
-widens most, and does the pair plot now show the Guinier-only degeneracy
-between size and scale?"""
+Two experiments from slide 34, each a one-line change before rerunning the
+sampler cell:
+
+1. *A bound that chooses the answer.* Cap the radius below its true value with
+   `fitter.set_param('radius', max=55)`. Does χ² warn you? Where does the
+   radius posterior pile up?
+2. *Restricted q destroys information.* Keep only `0.004–0.025 Å⁻¹` with
+   `fitter.set_q_range(qmin=0.004, qmax=0.025)`. Which posterior widens most,
+   and does the pair plot now show a "banana" between size and scale?"""
         ),
         markdown(
             f"""## Further reading
