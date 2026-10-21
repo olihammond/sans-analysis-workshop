@@ -62,12 +62,9 @@ pixi install
 pixi run workshop
 ```
 
-The first `pixi install` resolves the environment (including sans-fitter from
-PyPI) and writes `pixi.lock`; commit that file so every later install matches.
-
 In JupyterLab, open [`exercises/00_start_here.ipynb`](exercises/00_start_here.ipynb).
-The first code cell prints the installed sans-fitter version, which must be 0.4
-or newer.
+The first code cell prints the loaded `sans_fitter` path. It must point to this
+repository's `src/sans_fitter` directory, not a package under `site-packages`.
 
 If the VISA image does not provide the Prefix.dev Pixi executable:
 
@@ -75,7 +72,7 @@ If the VISA image does not provide the Prefix.dev Pixi executable:
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install ".[dev]"
+python -m pip install -e ".[dev]"
 jupyter lab exercises
 ```
 
@@ -94,7 +91,7 @@ On Windows, activate the environment with `.venv\Scripts\activate`.
 | 60–75 min | `04_bayesian_uncertainty.ipynb` | Optional advanced DREAM sampling and posterior checks |
 
 Student workbooks are in [`exercises/`](exercises/). This is a SANS workshop,
-not a programming course. The only code students write is sans-fitter calls
+not a programming course. The only code students write is `sans_fitter` calls
 they have just been shown (`set_model`, `set_param`, `fit`, `plot_results`,
 `plot_model`, `get_fit_report`, `set_structure_factor`, `fit_bayesian` and the
 posterior plots), in cells
@@ -122,7 +119,9 @@ fractions can be checked against the stated concentrations.
 ├── instructor/       # Dataset ground truth and mystery-sample answer key
 ├── mystery_data/     # Six unlabelled datasets for the report exercise
 ├── scripts/          # Reproducible material generator
-└── solutions/        # Worked and executable notebooks
+├── solutions/        # Worked and executable notebooks
+├── src/sans_fitter/  # Bundled teaching-oriented fitting helper
+└── tests/            # Tests for the fitting helper
 ```
 
 The three datasets use `Q,I,dI` columns, with q in inverse angstrom and
@@ -169,33 +168,23 @@ Regenerate the materials and execute every student and solution notebook
 python scripts/generate_workshop.py --check
 ```
 
-Check code quality:
+Run library tests and code-quality checks:
 
 ```bash
-ruff check scripts
-ruff format --check scripts
+python -m pytest
+ruff check src tests scripts
+ruff format --check src tests scripts
 ```
 
 Notebook checks use a non-interactive Matplotlib backend and write executed
 solution copies to a temporary directory, leaving the teaching copies clean.
 
-## Fitting package
+## Bundled fitting helper
 
-The notebooks use [sans-fitter](https://pypi.org/project/sans-fitter/) 0.4 or
-newer, installed from PyPI ([documentation](https://ai4se1dk.github.io/SANS-fitter/),
-[source](https://github.com/ai4se1dk/SANS-fitter)). It gives a concise interface
-to SasModels, BUMPS and SciPy. Students can keep using it after the workshop.
-
-Two settings matter for the workshop data:
-
-- The CSV files have no `dQ` column, so every fitter calls
-  `set_resolution('none')`. Without it, sans-fitter warns that it cannot smear
-  the model.
-- For a hard-sphere structure factor with a freely fitted `radius_effective`,
-  notebook 03 sets `radius_effective_mode` to 0 after `set_structure_factor()`.
-  In sans-fitter 0.4 the "unconstrained" mode leaves sasmodels' default (1) in
-  place, which computes the interaction radius from the particle radius and
-  ignores `radius_effective`.
+The `sans_fitter` Python package is included to give the notebooks a concise,
+stable interface to SasModels, BUMPS, and SciPy. It is supporting workshop code,
+not the identity or primary deliverable of this repository. See
+[`NOTICE.md`](NOTICE.md) for provenance.
 
 ## License
 
