@@ -660,7 +660,7 @@ Two practical notes:
         ),
         code(fit_call),
         markdown(
-            """## Exercise 3 — For your now-expert critique!
+            """## Exercise 3 — Time for your expert critique!
 
 Record:
 
