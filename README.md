@@ -88,10 +88,14 @@ On Windows, activate the environment with `.venv\Scripts\activate`.
 | 25 min | Discussion | Challenge review and plenary |
 | 60–75 min | `04_bayesian_uncertainty.ipynb` | Optional advanced DREAM sampling and posterior checks |
 
-Student workbooks are in [`exercises/`](exercises/). They first demonstrate the
-fitting API in small steps, then use `YOUR CODE HERE` cells and deliberate
-`NotImplementedError` stops to require students to complete each analysis.
-Fully executable reference copies are in [`solutions/`](solutions/).
+Student workbooks are in [`exercises/`](exercises/). This is a SANS workshop,
+not a programming course. The only code students write is `sans_fitter` calls
+they have just been shown (`set_model`, `set_param`, `fit`, `plot_results`,
+`set_structure_factor`, `fit_bayesian` and the posterior plots), in cells
+marked `YOUR CODE HERE` that list the exact lines to add. Everything else
+(functions, loops, reading values out of results, NumPy formulas) is provided
+and commented. Scientific answers go in **Your answer** text cells. Fully
+executable copies with model answers are in [`solutions/`](solutions/).
 
 ### Mystery-sample report
 
@@ -154,8 +158,8 @@ Regenerate datasets and clean notebooks:
 python scripts/generate_workshop.py
 ```
 
-Regenerate the materials, validate student task cells, and execute every
-solution notebook:
+Regenerate the materials and execute every student and solution notebook
+(student workbooks must run end to end without edits):
 
 ```bash
 python scripts/generate_workshop.py --check

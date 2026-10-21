@@ -153,6 +153,16 @@ def code(source: str) -> dict[str, object]:
     }
 
 
+def answer(solution: bool, model_answer: str, prompt: str) -> dict[str, object]:
+    """Create a written-answer cell: a prompt for students, a model answer in solutions."""
+    if solution:
+        return markdown(f'**Model answer.** {model_answer}')
+    return markdown(
+        '**Your answer** *(double-click this cell to edit it, then press Shift + Enter)*'
+        f'\n\n{prompt}'
+    )
+
+
 def connection(source: str) -> dict[str, object]:
     """Create a highlighted markdown cell linking the notebook to the lecture.
 
@@ -287,25 +297,21 @@ print(f'Smallest distance probed: {d_min:6.1f} Å = {d_min / 10:5.1f} nm')
 2. What information does `dI` carry?
 3. Which part of the curve is most sensitive to overall particle size?
 
-Write a one-sentence prediction in the cell below.
+Write a one-sentence prediction for each in the answer cell below.
 
 *Hints from the lecture:* intensity typically falls by several orders of
 magnitude over the measured range, and power laws $I \\propto Q^{-m}$ become
 straight lines of slope $-m$ on log–log axes (slide 20). Size information sits
 where $Q \\sim 2\\pi/d$ for the whole particle, i.e. at the low-q end (slide 19)."""
         ),
-        code(
-            """prediction = (
-    'Low q should contain information about the overall size; logarithmic axes '
-    'show features spanning several orders of magnitude.'
-)
-print(prediction)
-"""
-            if solution
-            else """# TODO: Replace this with your prediction.
-prediction = 'I expect intensity to decrease as q increases.'
-print(prediction)
-"""
+        answer(
+            solution,
+            """Intensity falls by several orders of magnitude, and power laws become
+straight lines on log–log axes, so both axes are logarithmic. `dI` is the
+one-standard-deviation uncertainty of each point; it tells a fit how much to
+trust that point. The overall particle size is encoded at low q, where the
+curve bends over from the plateau (the Guinier region).""",
+            'Write a one-sentence prediction for each of the three questions.',
         ),
         code(
             """fig, ax = plt.subplots(figsize=(8, 5))
@@ -370,39 +376,37 @@ Two consequences matter for the rest of the afternoon:
 def sphere_notebook(solution: bool) -> dict[str, object]:
     """Create the introductory fitting notebook."""
     label = 'Solution' if solution else 'Student workbook'
-    sphere_function = (
-        """def sphere_amplitude(q, radius):
+    sphere_function = f"""def sphere_amplitude(q, radius):
+    # Sphere form-factor amplitude F(q), written exactly as in the equation above.
     qr = q * radius
     return 3 * (np.sin(qr) - qr * np.cos(qr)) / qr**3
 
 
-trial_radius = 58.0
+# The measured intensity follows the amplitude squared, P(q) = F(q)^2.
+# trial_radius is in Å. Change this number, then rerun this cell and the plot
+# below, until the minima of the model line up with the minima of the data.
+trial_radius = {58.0 if solution else 50.0}
 trial_shape = sphere_amplitude(q, trial_radius) ** 2
 """
-        if solution
-        else """def sphere_amplitude(q, radius):
-    qr = q * radius
-    # TODO: implement 3 * (sin(qr) - qr*cos(qr)) / (qr**3)
-    return np.ones_like(qr)
-
-
-trial_radius = 50.0  # TODO: change this and rerun the plot
-trial_shape = sphere_amplitude(q, trial_radius) ** 2
-"""
-    )
     model_setup = (
-        """model_name = 'sphere'
+        """# SasModels models are chosen by name, written as a lower-case string.
+# 'sphere' is a homogeneous sphere. All names are listed at
+# https://www.sasview.org/docs/user/qtgui/Perspectives/Fitting/models/index.html
+model_name = 'sphere'
 fitter.set_model(model_name)
+
+# get_params() prints every parameter of the chosen model: its current value,
+# its bounds, and whether it will be fitted (the Vary column).
 fitter.get_params()
 """
         if solution
-        else """# `set_model` takes a SasModels model name as a string.
+        else """# `set_model` takes a SasModels model name as a string, in quotes.
 # Names are lower case and match the SasView model list, e.g. 'cylinder':
 # https://www.sasview.org/docs/user/qtgui/Perspectives/Fitting/models/index.html
-# TODO: replace None with the model name for a homogeneous sphere.
+# YOUR CODE HERE: replace None with the model name for a homogeneous sphere.
 model_name = None
 if model_name is None:
-    raise NotImplementedError('Choose a SasModels model')
+    raise NotImplementedError('Replace None with a model name in quotes, then rerun')
 
 fitter.set_model(model_name)
 
@@ -411,35 +415,49 @@ fitter.get_params()
 """
     )
     params = (
-        """fitter.set_param('sld', value=4.2, vary=False)
+        """# Contrast: both SLDs (in 10^-6 Å^-2) are known from the sample composition,
+# so they are fixed with vary=False and the optimizer will not change them.
+fitter.set_param('sld', value=4.2, vary=False)
 fitter.set_param('sld_solvent', value=1.0, vary=False)
+
+# Fitted parameters: value = starting guess, min/max = physically sensible limits,
+# vary=True = let the optimizer adjust it.
+# Radius in Å: start near the estimate from the first minimum.
 fitter.set_param('radius', value=50, min=20, max=100, vary=True)
+# Scale: the overall intensity level (volume fraction x calibration here).
 fitter.set_param('scale', value=0.05, min=0.001, max=0.2, vary=True)
+# Background: the flat level at high q. It cannot be negative.
 fitter.set_param('background', value=0.002, min=0, max=0.01, vary=True)
 """
         if solution
-        else """# One fixed parameter is demonstrated below. `vary=False` tells the
-# optimizer to retain this independently known value.
+        else """# One fixed parameter is done for you. `vary=False` keeps this
+# independently known value unchanged during the fit.
 fitter.set_param('sld', value=4.2, vary=False)
 
-# YOUR CODE HERE
-# 1. Fix `sld_solvent` at 1.0.
-# 2. Configure radius, scale, and background with an initial value and bounds.
-# 3. Set `vary=True` for those three fitted parameters.
-raise NotImplementedError('Configure the remaining model parameters')
+# YOUR CODE HERE: add four more set_param lines, in the same form as above
+# and as in the box "Changing parameters".
+#   1. Fix 'sld_solvent' at 1.0.
+#   2. 'radius', 'scale' and 'background': give each a value, min and max,
+#      and vary=True. Use the table above to choose the numbers.
+# When your lines are in place, delete the `raise` line below and run the cell.
+raise NotImplementedError('Add the set_param lines, then delete this line')
 """
     )
     fit_call = (
-        """result = fitter.fit(engine='lmfit', method='least_squares')
+        """# Run a bounded least-squares fit, starting from the values set above.
+# The returned dictionary, stored in `result`, holds the fitted parameters.
+result = fitter.fit(engine='lmfit', method='least_squares')
+
+# Top panel: data and model. Bottom panel: normalized residuals,
+# (data - model) / dI, i.e. the misfit in units of the error bar.
 fitter.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
-        else """# `fit` accepts an optimization engine and an engine-specific method.
-# For a bounded local fit, use engine='lmfit' and method='least_squares'.
-# Store the returned dictionary in `result`, then call `plot_results`.
-
-# YOUR CODE HERE
-raise NotImplementedError('Fit the configured model and plot its residuals')
+        else """# YOUR CODE HERE: two lines.
+#   1. Fit with  result = fitter.fit(engine='lmfit', method='least_squares')
+#   2. Plot with fitter.plot_results(show_residuals=True, log_scale=True)
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Add the fit and plot lines, then delete this line')
 """
     )
     cells = [
@@ -538,7 +556,9 @@ Every fit follows the same sequence:
 5. configure each parameter with `set_param(...)`;
 6. call `fit(...)` and inspect the residuals.
 
-The first two steps are demonstrated below. You will choose the model."""
+The first two steps are done for you below. You will then choose the model,
+set the parameters and run the fit yourself, using only the commands listed
+here. Each task cell says exactly which lines to add."""
         ),
         code(
             """fitter = SANSFitter()
@@ -566,8 +586,9 @@ fitter.set_param(
 - `vary=True` lets the optimizer change the parameter.
 - `vary=False` fixes independently known quantities such as SLD.
 
-Keep both SLDs fixed. Choose and justify initial values and bounds for radius,
-scale, and background. Afterward, call `get_params()` to audit your setup.
+Keep both SLDs fixed. Choose and justify a starting value and bounds for
+radius, scale and background, using the table below. There is no single right
+answer; defensible numbers are what matter.
 
 **Where do defensible numbers come from?** The lecture's *Step 0* (slide 28)
 is to know what you put in the beam. In practice:
@@ -654,24 +675,35 @@ why the minima are so sharp. Say which one you would expect to matter most for a
 real measurement, and why."""
         ),
         code(
-            """for name in ['radius', 'scale', 'background']:
+            """# result['parameters'][name]['formatted'] is the fitted value with its
+# uncertainty, written as text.
+for name in ['radius', 'scale', 'background']:
     print(name, result['parameters'][name]['formatted'])
-print('Fit statistic:', result['chisq'])
+
+# Reduced chi-squared: the sum of squared normalized residuals divided by
+# (number of data points - number of fitted parameters). About 1 is good.
+n_points = np.count_nonzero(~fitter.data.mask)
+n_fitted = 3
+print('Reduced chi-squared:', result['chisq'] / (n_points - n_fitted))
 """
-            if solution
-            else """# YOUR CODE HERE
-# Extract the fitted radius, scale, and background from `result`.
-# Then write your scientific interpretation in a new Markdown cell.
-raise NotImplementedError('Summarize and interpret the fit')
-"""
+        ),
+        answer(
+            solution,
+            """The fitted radius is about 58.0 ± 0.02 Å, matching the first-minimum
+estimate $4.49/q_1$. The residuals scatter randomly around zero with no wave
+following the oscillations, the reduced χ² is about 0.8, and no parameter sits on
+a bound. The model ignores polydispersity and instrumental resolution. For a real
+sample these would fill in the minima, and the quoted ± 0.02 Å would be far too
+optimistic.""",
+            'Record the four points listed above and interpret the fit in two or three sentences.',
         ),
         markdown(
             """## Extension — Bad starting values
 
-Change the initial radius to 15 Å while retaining broad bounds. Does the local
-optimizer reach the same answer? If not, try BUMPS differential evolution with
-`fitter.fit(engine='bumps', method='de', steps=200)`. What does this reveal
-about optimization versus inference?
+What happens if the starting radius is poor, say 15 Å, with broad bounds? Does
+the local optimizer reach the same answer? Compare it with BUMPS differential
+evolution, `fitter.fit(engine='bumps', method='de', steps=200)`. What does this
+reveal about optimization versus inference?
 
 *Why this happens:* the χ² surface of a form factor is full of local minima.
 A sphere of 15 Å puts its first minimum near $4.49/15 \\approx 0.3$ Å⁻¹, so
@@ -683,7 +715,24 @@ the whole prior box, so it is far less sensitive to the start. Neither method
 tells you *how well* the radius is determined. That question, the theme of slide
 32 (*How can uncertainties help*), is taken up in notebook 04.
 
-Remember the χ² note above when you compare the two engines' numbers."""
+Remember the χ² note above when you compare the two engines' numbers.
+
+The cell below runs both experiments for you. Read the two printed radii and
+compare the two residual plots."""
+        ),
+        code(
+            """# 1. The same local optimizer, from a deliberately poor start of 15 Å.
+fitter.set_param('radius', value=15, min=10, max=200, vary=True)
+local_result = fitter.fit(engine='lmfit', method='least_squares')
+fitter.plot_results(show_residuals=True, log_scale=True)
+
+# 2. Differential evolution, a population search over the whole min-max range.
+global_result = fitter.fit(engine='bumps', method='de', steps=200)
+fitter.plot_results(show_residuals=True, log_scale=True)
+
+print('Local optimizer radius:       ', local_result['parameters']['radius']['formatted'])
+print('Differential evolution radius:', global_result['parameters']['radius']['formatted'])
+"""
         ),
         markdown(
             f"""## Further reading
@@ -702,85 +751,77 @@ Remember the χ² note above when you compare the two engines' numbers."""
 def detective_notebook(solution: bool) -> dict[str, object]:
     """Create the model-selection notebook."""
     label = 'Solution' if solution else 'Student workbook'
-    conclusion = (
-        """conclusion = (
-    'The ellipsoid is preferred on the full q-range: its residuals lose the '
-    'systematic oscillatory pattern left by the sphere. After truncation the '
-    'models are harder to distinguish, showing that fit quality depends on '
-    'the information measured, not only the optimizer.'
-)
-print(conclusion)
-"""
-        if solution
-        else """# TODO: defend a model using residuals and physical plausibility.
-conclusion = 'Write your evidence-based conclusion here.'
-print(conclusion)
-"""
+    conclusion = answer(
+        solution,
+        """The ellipsoid is preferred on the full q range: its residuals lose the
+systematic oscillatory pattern left by the sphere, and its fitted radii are
+physically reasonable. After truncation to the Guinier region the two models are
+hard to distinguish, showing that the fit quality depends on the information
+measured, not only on the optimizer. A measurement to higher q, or of aligned
+particles, would make the distinction stronger.""",
+        'Write your referee-style verdict: one reason from the residuals, one from '
+        'parameter plausibility, and one follow-up measurement.',
     )
-    sphere_fit = (
-        """def fit_sphere(qmin=None, qmax=None):
+    sphere_fit = """def fit_sphere(qmin=None, qmax=None):
+    # The notebook-01 workflow wrapped in a function, so it can be rerun
+    # on a different q range. qmin and qmax are in Å^-1; None means "use all data".
     fitter = SANSFitter()
     fitter.load_data(str(filename))
     if qmin is not None or qmax is not None:
         fitter.set_q_range(qmin=qmin, qmax=qmax)
     fitter.set_model('sphere')
+    # Same contrast as before, so the SLDs stay fixed.
     fitter.set_param('sld', value=4.2, vary=False)
     fitter.set_param('sld_solvent', value=1.0, vary=False)
+    # Broad bounds: we do not yet know whether a sphere is even the right shape.
     fitter.set_param('radius', value=45, min=10, max=180, vary=True)
     fitter.set_param('scale', value=0.04, min=0.001, max=0.2, vary=True)
     fitter.set_param('background', value=0.002, min=0, max=0.02, vary=True)
     return fitter, fitter.fit(engine='lmfit', method='least_squares')
 
 
+# Fit the full q range and show the residuals.
 sphere, sphere_result = fit_sphere()
 sphere.plot_results(show_residuals=True, log_scale=True)
 """
-        if solution
-        else """def fit_sphere(qmin=None, qmax=None):
-    # Fit a sphere, optionally over only part of the measured q range.
-    fitter = SANSFitter()
-    fitter.load_data(str(filename))
-    if qmin is not None or qmax is not None:
-        fitter.set_q_range(qmin=qmin, qmax=qmax)
-
-    # YOUR CODE HERE
-    # Select the model, configure its parameters, and return the fitter and
-    # result. Choose your own defensible initial values and bounds.
-    raise NotImplementedError('Implement the sphere fitting workflow')
-
-
-sphere, sphere_result = fit_sphere()
-sphere.plot_results(show_residuals=True, log_scale=True)
-"""
-    )
     ellipsoid_fit = (
-        """ellipsoid = SANSFitter()
+        """# A new, separate fitter, so the sphere fit above is left untouched.
+ellipsoid = SANSFitter()
 ellipsoid.load_data(str(filename))
 ellipsoid.set_model('ellipsoid')
+
+# The ellipsoid has two radii: radius_polar along its symmetry axis and
+# radius_equatorial perpendicular to it. Equal radii would make it a sphere.
 ellipsoid.set_param('sld', value=4.2, vary=False)
 ellipsoid.set_param('sld_solvent', value=1.0, vary=False)
 ellipsoid.set_param('radius_polar', value=100, min=15, max=220, vary=True)
 ellipsoid.set_param('radius_equatorial', value=40, min=10, max=120, vary=True)
 ellipsoid.set_param('scale', value=0.04, min=0.001, max=0.2, vary=True)
 ellipsoid.set_param('background', value=0.002, min=0, max=0.02, vary=True)
+ellipsoid.get_params()
+
 ellipsoid_result = ellipsoid.fit(engine='lmfit', method='least_squares')
 ellipsoid.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
-        else """ellipsoid = SANSFitter()
+        else """# A new, separate fitter, so the sphere fit above is left untouched.
+ellipsoid = SANSFitter()
 ellipsoid.load_data(str(filename))
 
-# Select 'ellipsoid', call `get_params()` to discover its two radius
-# parameters, then configure and fit it.
-
-# YOUR CODE HERE
-raise NotImplementedError('Configure and fit the ellipsoid model')
+# YOUR CODE HERE, following the same steps as for the sphere:
+#   1. ellipsoid.set_model('ellipsoid'), then ellipsoid.get_params() to see
+#      its parameters (it has radius_polar and radius_equatorial).
+#   2. set_param lines: fix both SLDs as before; give the two radii, scale and
+#      background starting values, bounds and vary=True.
+#   3. ellipsoid_result = ellipsoid.fit(engine='lmfit', method='least_squares')
+#   4. ellipsoid.plot_results(show_residuals=True, log_scale=True)
+# Keep the names `ellipsoid` and `ellipsoid_result`: later cells use them.
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Configure and fit the ellipsoid, then delete this line')
 """
     )
     short_range = (
-        """sphere_short, sphere_short_result = fit_sphere(qmin=0.004, qmax=0.025)
-sphere_short.plot_results(show_residuals=True, log_scale=True)
-
+        """# Ellipsoid: the same setup as before, restricted to the same q window.
 ellipsoid_short = SANSFitter()
 ellipsoid_short.load_data(str(filename))
 ellipsoid_short.set_q_range(qmin=0.004, qmax=0.025)
@@ -795,11 +836,18 @@ ellipsoid_short_result = ellipsoid_short.fit(engine='lmfit', method='least_squar
 ellipsoid_short.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
-        else """# Reuse `fit_sphere` with qmin=0.004 and qmax=0.025.
-# Then build an ellipsoid fit with the same q limits.
+        else """# Ellipsoid on the restricted window.
+ellipsoid_short = SANSFitter()
+ellipsoid_short.load_data(str(filename))
+ellipsoid_short.set_q_range(qmin=0.004, qmax=0.025)
 
-# YOUR CODE HERE
-raise NotImplementedError('Fit both models over the restricted q range')
+# YOUR CODE HERE: repeat your ellipsoid setup from Exercise 1 for
+# `ellipsoid_short` (set_model, set_param lines), then
+#   ellipsoid_short_result = ellipsoid_short.fit(engine='lmfit', method='least_squares')
+#   ellipsoid_short.plot_results(show_residuals=True, log_scale=True)
+# Keep the name `ellipsoid_short_result`: the next cells use it.
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Fit the ellipsoid on the restricted range, then delete this line')
 """
     )
     cells = [
@@ -858,17 +906,20 @@ notebook 01:
         markdown(
             """## Exercise 1 — Competing explanations
 
-You now know the full workflow, so this notebook gives less code. Implement a
-reusable sphere fit first. Keep SLD values fixed and vary only radius, scale,
-and background. Compare residual patterns, not just the numerical objective."""
+The first cell repeats the notebook-01 workflow for a sphere, wrapped in a
+function so it can be rerun later on part of the q range. The SLDs stay fixed;
+only radius, scale and background vary. Compare residual patterns, not just
+the numerical objective."""
         ),
         code(sphere_fit),
         markdown(
             """### A competing model
 
-Create a **new** `SANSFitter` for the ellipsoid so the two fits remain
-independent. After `set_model('ellipsoid')`, use `get_params()` to discover the
-model's parameter names. Decide whether each should be fixed or varied."""
+Set up the ellipsoid with its own `SANSFitter`, so the two fits stay
+independent. After `set_model('ellipsoid')`, `get_params()` shows its two size
+parameters. Decide which parameters to fix and which to vary. Hint: if both
+radii start at the same value, the optimizer begins from a sphere; is that a
+fair start for testing an elongated particle?"""
         ),
         code(ellipsoid_fit),
         code(
@@ -881,12 +932,20 @@ for name in ['radius_polar', 'radius_equatorial']:
         markdown(
             """## Exercise 2 — Remove information
 
-Repeat both fits using only `0.004 ≤ q ≤ 0.025 Å⁻¹`. Predict what will happen
-before running the cells. Which shape features have disappeared from view?
+Repeat both fits using only `0.004 ≤ q ≤ 0.025 Å⁻¹`. The sphere fit is done
+for you; set up the ellipsoid fit yourself. Predict what will happen before
+running the cells. Which shape features have disappeared from view?
 
 *Before you run:* convert the window to real space with $d \\approx 2\\pi/Q$,
 as in notebook 00. What is the smallest distance still resolved, and how does
 it compare with the particle dimensions you just fitted?"""
+        ),
+        code(
+            """# Sphere: reuse fit_sphere from Exercise 1, now with only 0.004 <= q <= 0.025 Å^-1.
+sphere_short, sphere_short_result = fit_sphere(qmin=0.004, qmax=0.025)
+sphere_short.plot_results(show_residuals=True, log_scale=True)
+print('Restricted sphere radius:', sphere_short_result['parameters']['radius']['formatted'])
+"""
         ),
         code(short_range),
         markdown(
@@ -897,20 +956,49 @@ $I(Q) \\approx I(0)\\exp(-Q^2R_g^2/3)$, which is valid for $QR_g \\lesssim 1.3$
 (slide 19). In that region the data carry essentially **two numbers**, $I(0)$
 and $R_g$. Any model that can reproduce those two numbers fits equally well.
 
-Test this with your own fitted parameters:
+The cell below tests this with your fitted parameters, using
+$R_g^2 = (2R_e^2 + R_p^2)/5$ for a spheroid with equatorial radius $R_e$ and
+polar radius $R_p$, and $R_g^2 = \\tfrac{3}{5}R^2$ for a sphere. Look at the
+printed numbers and answer:
 
-1. For a spheroid with equatorial radius $R_e$ and polar radius $R_p$,
-   $R_g^2 = (2R_e^2 + R_p^2)/5$. For a sphere, $R_g^2 = \\tfrac{3}{5}R^2$.
-   Compute both from your **restricted-range** fits. How close are they?
-2. Compute $Q_{\\max}R_g$ for the restricted window. Where does it sit relative
-   to the Guinier limit of 1.3?
-3. Using the full-range ellipsoid fit, what radius would a sphere *with the
-   same* $R_g$ have? Is this close to the radius your restricted sphere fit
-   found?
+1. How close are the two restricted-range $R_g$ values?
+2. Where does $Q_{\\max}R_g$ sit relative to the Guinier limit of 1.3?
+3. Is the equal-$R_g$ sphere radius close to the radius the restricted sphere
+   fit found?
 
 This is **non-identifiability**: the data are compatible with a family of
 parameter sets, so the optimizer's single answer is not a measurement of
 shape. Notebook 04 shows the same idea as correlated posterior distributions."""
+        ),
+        code(
+            """def value(result, name):
+    # The fitted number for one parameter.
+    return result['parameters'][name]['value']
+
+
+def rg_spheroid(r_equatorial, r_polar):
+    return np.sqrt((2 * r_equatorial**2 + r_polar**2) / 5)
+
+
+def rg_sphere(radius):
+    return np.sqrt(3 / 5) * radius
+
+
+rg_sphere_short = rg_sphere(value(sphere_short_result, 'radius'))
+rg_ellipsoid_short = rg_spheroid(
+    value(ellipsoid_short_result, 'radius_equatorial'),
+    value(ellipsoid_short_result, 'radius_polar'),
+)
+rg_ellipsoid_full = rg_spheroid(
+    value(ellipsoid_result, 'radius_equatorial'), value(ellipsoid_result, 'radius_polar')
+)
+
+print(f'1. Restricted range: Rg(sphere) = {rg_sphere_short:.1f} Å, '
+      f'Rg(ellipsoid) = {rg_ellipsoid_short:.1f} Å')
+print(f'2. Qmax * Rg = 0.025 * {rg_ellipsoid_full:.1f} = {0.025 * rg_ellipsoid_full:.2f}')
+print(f'3. Sphere with the full-range ellipsoid Rg: R = {np.sqrt(5 / 3) * rg_ellipsoid_full:.1f} Å; '
+      f'restricted sphere fit: R = {value(sphere_short_result, "radius"):.1f} Å')
+"""
         ),
         *(
             [
@@ -948,7 +1036,7 @@ Follow-up measurements from the lecture to consider:
   patterns when aligned (compare slide 27): a radially averaged 1D curve has
   thrown that information away."""
         ),
-        code(conclusion),
+        conclusion,
         markdown(
             f"""## Further reading
 
@@ -965,22 +1053,27 @@ Follow-up measurements from the lecture to consider:
 def interactions_notebook(solution: bool) -> dict[str, object]:
     """Create the structure-factor notebook."""
     label = 'Solution' if solution else 'Student workbook'
-    interpretation = (
-        """interpretation = (
-    'A form factor alone cannot reproduce the suppressed low-q intensity and '
-    'correlation peak. The hard-sphere structure factor captures excluded-volume '
-    'correlations; the fitted volume fraction should be treated as model-dependent.'
-)
-print(interpretation)
-"""
-        if solution
-        else """# TODO: explain what changed physically, not only statistically.
-interpretation = 'Write your physical interpretation here.'
-print(interpretation)
-"""
+    interpretation = answer(
+        solution,
+        """A form factor alone cannot reproduce the suppressed low-q intensity and the
+correlation peak: changing radius or scale moves the whole curve, not one region.
+The hard-sphere structure factor describes excluded-volume correlations between
+neighbouring particles. The peak comes from the typical nearest-neighbour
+distance, about twice `radius_effective`. The effective radius exceeds the
+form-factor radius because the interaction range can include a solvation or
+stabilizer layer that is invisible at this contrast. Linking the two radii makes
+χ² several times worse, so these data do not support that constraint. The fitted
+volume fraction
+is model-dependent: charge, attraction, polydispersity, or anisotropy would
+change it. A dilution series would confirm the interpretation, since the peak
+should weaken and the low-q suppression disappear on dilution.""",
+        'Explain what changed physically, not only statistically, and answer the four '
+        'questions above.',
     )
     dilute_fit = (
-        """dilute = SANSFitter()
+        """# The simplest plausible explanation: dilute spheres with no interactions,
+# set up exactly as in notebook 01.
+dilute = SANSFitter()
 dilute.load_data(str(filename))
 dilute.set_model('sphere')
 dilute.set_param('sld', value=4.2, vary=False)
@@ -992,15 +1085,24 @@ dilute_result = dilute.fit(engine='lmfit', method='least_squares')
 dilute.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
-        else """# Build the simplest plausible explanation: a dilute sphere.
-# Keep both SLD values fixed and vary radius, scale, and background.
+        else """dilute = SANSFitter()
+dilute.load_data(str(filename))
 
-# YOUR CODE HERE
-raise NotImplementedError('Build and fit the dilute-sphere model')
+# YOUR CODE HERE: the simplest plausible explanation, a dilute sphere,
+# with the same steps as in notebook 01:
+#   1. dilute.set_model(...)
+#   2. set_param lines: fix both SLDs (4.2 and 1.0); give radius, scale and
+#      background a value, bounds and vary=True.
+#   3. dilute_result = dilute.fit(engine='lmfit', method='least_squares')
+#   4. dilute.plot_results(show_residuals=True, log_scale=True)
+# Keep the names `dilute` and `dilute_result`: later cells use them.
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Build and fit the dilute-sphere model, then delete this line')
 """
     )
     interacting_fit = (
-        """interacting = SANSFitter()
+        """# Same sphere form factor as above...
+interacting = SANSFitter()
 interacting.load_data(str(filename))
 interacting.set_model('sphere')
 interacting.set_param('sld', value=4.2, vary=False)
@@ -1008,9 +1110,15 @@ interacting.set_param('sld_solvent', value=1.0, vary=False)
 interacting.set_param('radius', value=40, min=15, max=90, vary=True)
 interacting.set_param('scale', value=0.05, min=0.001, max=0.2, vary=True)
 interacting.set_param('background', value=0.002, min=0, max=0.02, vary=True)
+
+# ...now multiplied by a hard-sphere structure factor S(q).
 interacting.set_structure_factor('hardsphere')
+# Two new parameters appear: the interaction distance and the volume fraction.
+# A volume fraction above ~0.55 is impossible for hard spheres, hence the bound.
 interacting.set_param('radius_effective', value=45, min=20, max=100, vary=True)
 interacting.set_param('volfraction', value=0.2, min=0.01, max=0.55, vary=True)
+interacting.get_params()
+
 interacting_result = interacting.fit(engine='lmfit', method='least_squares')
 interacting.plot_results(show_residuals=True, log_scale=True)
 """
@@ -1018,27 +1126,28 @@ interacting.plot_results(show_residuals=True, log_scale=True)
         else """interacting = SANSFitter()
 interacting.load_data(str(filename))
 
-# Configure the same sphere form factor, add 'hardsphere', and call
-# `get_params()` before configuring radius_effective and volfraction.
-
-# YOUR CODE HERE
-raise NotImplementedError('Add, inspect, configure, and fit the structure factor')
+# YOUR CODE HERE:
+#   1. The same sphere setup as `dilute` above (set_model and set_param lines).
+#   2. interacting.set_structure_factor('hardsphere')
+#   3. interacting.get_params() to see the new parameters.
+#   4. set_param lines for 'radius_effective' and 'volfraction' with vary=True.
+#      A hard-sphere volume fraction cannot exceed about 0.55.
+#   5. interacting_result = interacting.fit(engine='lmfit', method='least_squares')
+#   6. interacting.plot_results(show_residuals=True, log_scale=True)
+# Keep the name `interacting_result`: later cells use it.
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Add, configure, and fit the structure factor, then delete this line')
 """
     )
-    comparison = (
-        """print('Form factor only:', dilute_result['chisq'])
-print('With structure factor:', interacting_result['chisq'])
+    comparison = """# Fit statistic for each model: lower is better, but only residuals and
+# physical plausibility make it a scientific conclusion.
+print('Form factor only:      ', dilute_result['chisq'])
+print('With structure factor: ', interacting_result['chisq'])
+
+# The fitted particle radius, interaction radius, and volume fraction.
 for name in ['radius', 'radius_effective', 'volfraction']:
     print(name, interacting_result['parameters'][name]['formatted'])
 """
-        if solution
-        else """# Report both objective values and the fitted radius,
-# effective radius, and volume fraction.
-
-# YOUR CODE HERE
-raise NotImplementedError('Compare the two physical explanations')
-"""
-    )
     cells = [
         markdown(
             f"""# 03 — When particles interact ({label})
@@ -1088,8 +1197,8 @@ Compare this curve with the dilute sphere from notebook 01.
         markdown(
             """## Exercise 1 — Deliberately incomplete model
 
-From the previous notebooks, build a dilute-sphere fit without copying a
-complete solution. Locate the structured residual region. Why can changing
+Using the same steps as in notebook 01, fit the simplest plausible model, a
+dilute sphere. Locate the structured residual region. Why can changing
 radius or scale not independently repair it?
 
 *Hint:* the lecture's "four knobs" (slide 18). Concentration, contrast and
@@ -1110,7 +1219,9 @@ additional parameters:
 - `volfraction`: fraction of the sample volume occupied by interacting spheres;
 - `radius_effective`: interaction distance, which may include a solvation layer.
 
-Fit both independently. The mode-control parameters should remain fixed.
+Fit both new parameters freely. A third new parameter,
+`radius_effective_mode`, only selects how the effective radius is calculated;
+leave it fixed.
 
 **What is being multiplied in.** This is the full master equation of slide 18,
 $I(Q) = \\phi V \\Delta\\rho^2 P(Q)\\,S(Q) + \\mathrm{bkg}$, now with $S(Q) \\neq 1$.
@@ -1152,12 +1263,30 @@ Notes for these questions:
   purely repulsive particles. Attractive interactions *raise* $S(0)$ instead
   (slide 24), and the "decoupling" of $P(Q)$ and $S(Q)$ is an approximation
   for polydisperse or anisotropic particles.
-- For question 4, `radius_effective_mode` is an argument of
-  `set_structure_factor`, not of `set_param`. Build a new fitter and call
-  `set_structure_factor('hardsphere', radius_effective_mode='link_radius')`,
-  as on slide 24. Compare the residuals and reduced χ² with your free fit."""
+- For question 4, the cell below repeats the fit with the interaction radius
+  tied to the particle radius, as on slide 24. Compare its residuals and χ²
+  with the free fit above."""
         ),
-        code(interpretation),
+        code(
+            """# Same model, but radius_effective is forced to equal the particle radius.
+linked = SANSFitter()
+linked.load_data(str(filename))
+linked.set_model('sphere')
+linked.set_param('sld', value=4.2, vary=False)
+linked.set_param('sld_solvent', value=1.0, vary=False)
+linked.set_param('radius', value=40, min=15, max=90, vary=True)
+linked.set_param('scale', value=0.05, min=0.001, max=0.2, vary=True)
+linked.set_param('background', value=0.002, min=0, max=0.02, vary=True)
+linked.set_structure_factor('hardsphere', radius_effective_mode='link_radius')
+linked.set_param('volfraction', value=0.2, min=0.01, max=0.55, vary=True)
+linked_result = linked.fit(engine='lmfit', method='least_squares')
+linked.plot_results(show_residuals=True, log_scale=True)
+
+print('Free effective radius:  ', interacting_result['chisq'])
+print('Linked effective radius:', linked_result['chisq'])
+"""
+        ),
+        interpretation,
         markdown(
             """## Exit ticket
 
@@ -1192,8 +1321,14 @@ def bayesian_notebook(solution: bool) -> dict[str, object]:
         """fitter = SANSFitter()
 fitter.load_data(str(filename))
 fitter.set_model('sphere')
+
+# Known contrast: fixed, exactly as in notebook 01.
 fitter.set_param('sld', value=4.2, vary=False)
 fitter.set_param('sld_solvent', value=1.0, vary=False)
+
+# For DREAM, min and max define uniform priors: every value inside is equally
+# plausible beforehand. They are narrower than in notebook 01 so that the short
+# classroom run can explore them, but still wide enough not to cut the answer.
 fitter.set_param('radius', value=50, min=30, max=90, vary=True)
 fitter.set_param('scale', value=0.05, min=0.01, max=0.12, vary=True)
 fitter.set_param('background', value=0.002, min=0, max=0.008, vary=True)
@@ -1203,93 +1338,102 @@ fitter.get_params()
         else """fitter = SANSFitter()
 fitter.load_data(str(filename))
 
-# Select a sphere model and inspect its parameter names. Keep both SLDs fixed,
-# then give radius, scale, and background proper bounded uniform priors.
-# Avoid bounds that are so broad that the short classroom chain cannot explore.
-
-# YOUR CODE HERE
-raise NotImplementedError('Configure the sphere model and its priors')
+# YOUR CODE HERE:
+#   1. fitter.set_model('sphere') and fitter.get_params()
+#   2. Fix both SLDs (4.2 and 1.0) with vary=False.
+#   3. Give radius, scale and background a value, min, max and vary=True.
+#      The min-max range is now your uniform prior. Keep it defensible but not
+#      so broad that the short classroom run cannot explore it.
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Configure the sphere model and its priors, then delete this line')
 """
     )
     run_sampler = (
-        """np.random.seed(2026)
+        """# Fix the random seed so everyone in the room gets the same chains.
+np.random.seed(2026)
+
+# A short, exploratory DREAM run sized for class time (about a minute).
 result = fitter.fit_bayesian(samples=1500, burn=100, thin=1, pop=10)
+
+# Best sample from the posterior, with normalized residuals.
 fitter.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
-        else """# For a classroom-scale exploratory run, use:
-#   samples=1500, burn=100, thin=1, pop=10
-# Store the result and plot the best fit with normalized residuals.
-
-# YOUR CODE HERE
-raise NotImplementedError('Run DREAM and inspect the fitted curve')
+        else """# YOUR CODE HERE: two lines.
+#   1. result = fitter.fit_bayesian(samples=1500, burn=100, thin=1, pop=10)
+#   2. fitter.plot_results(show_residuals=True, log_scale=True)
+# The seed below makes everyone's chains identical; leave it in place.
+np.random.seed(2026)
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Run DREAM and plot the result, then delete this line')
 """
     )
-    diagnostics = (
-        """posterior = fitter.get_posterior()
+    diagnostics = """posterior = fitter.get_posterior()
 print('Parameters:', posterior.labels)
-print('Combined sample shape:', posterior.samples.shape)
+print('Combined sample shape (draws, parameters):', posterior.samples.shape)
+
+# For each parameter: the 95 % credible interval and the R-hat convergence check
+# (close to 1 is good; above about 1.05 means the chains disagree).
 for name in posterior.labels:
     low, high = posterior.ci_95[name]
     r_hat = posterior.diagnostics.get(name, {}).get('r_hat')
     r_hat_text = f'{r_hat:.3f}' if r_hat is not None else 'n/a'
     print(f'{name:>12}: 95% CI [{low:.6g}, {high:.6g}], R-hat={r_hat_text}')
 
+# Trace plots: each chain's value against step number. Look for flat, well-mixed
+# "fuzzy caterpillars" rather than drifts or chains that stay apart.
 fitter.plot_trace()
 """
-        if solution
-        else """posterior = fitter.get_posterior()
-print('Parameters:', posterior.labels)
-print('Combined sample shape:', posterior.samples.shape)
-
-# YOUR CODE HERE
-# Print each 95% credible interval and R-hat, then call `plot_trace()`.
-# Identify any parameter for which the chains have not mixed well.
-raise NotImplementedError('Inspect convergence and credible intervals')
-"""
-    )
     posterior_plots = (
-        """fitter.plot_param_distribution('radius')
+        """# The marginal distribution of the radius: its uncertainty after
+# averaging over all values of the other parameters.
+fitter.plot_param_distribution('radius')
+
+# Pair plot: every pair of parameters against each other. A tilted, elongated
+# cloud means the data constrain a combination of the two, not each separately.
 fitter.plot_posterior_pairs()
+
+# The same information as a single matrix of correlation coefficients (-1 to 1).
 fitter.plot_param_correlations()
 """
         if solution
-        else """# Use:
-#   plot_param_distribution('radius')
-#   plot_posterior_pairs()
-#   plot_param_correlations()
-# Explain one correlation physically in a Markdown cell.
-
-# YOUR CODE HERE
-raise NotImplementedError('Explore marginal and joint posterior structure')
+        else """# YOUR CODE HERE: three lines.
+#   fitter.plot_param_distribution('radius')   # uncertainty in one parameter
+#   fitter.plot_posterior_pairs()              # every pair of parameters
+#   fitter.plot_param_correlations()           # correlation coefficients, -1 to 1
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Plot the posterior distributions, then delete this line')
 """
     )
     predictive = (
-        """fitter.plot_posterior_predictive(style='band+draws', n_draws=40)
+        """# Draw parameter sets from the posterior, compute the model for each, and
+# plot the 95 % band they span together with 40 individual model curves.
+fitter.plot_posterior_predictive(style='band+draws', n_draws=40)
 """
         if solution
-        else """# Plot a 95% posterior predictive band with 40 individual draws.
-# Decide whether uncertainty is equally large across the measured q range.
-
-# YOUR CODE HERE
-raise NotImplementedError('Create and interpret a posterior predictive check')
+        else """# YOUR CODE HERE: one line.
+#   fitter.plot_posterior_predictive(style='band+draws', n_draws=40)
+# It draws parameter sets from the posterior, computes the model for each, and
+# shows the 95 % band they span plus 40 individual curves.
+# Delete the `raise` line below when your lines are in place.
+raise NotImplementedError('Plot the posterior predictive check, then delete this line')
 """
     )
-    interpretation = (
-        """interpretation = (
-    'The radius is tightly constrained by the oscillation positions, while scale '
-    'and background show stronger trade-offs with intensity normalization. The '
-    'R-hat values remain above the convergence target, so this classroom chain '
-    'must be lengthened and rechecked before reporting any credible intervals.'
-)
-print(interpretation)
-"""
-        if solution
-        else """# Summarize what DREAM adds beyond the point estimate. Refer to the
-# credible intervals, trace behavior, parameter correlations, and predictive band.
-interpretation = 'Write your evidence-based interpretation here.'
-print(interpretation)
-"""
+    interpretation = answer(
+        solution,
+        """The radius is the best-constrained parameter, because it is fixed by the
+positions of the form-factor minima. Scale and background are the most
+correlated pair (r ≈ −0.3): both lift the curve where the signal is weakest, so
+one can partly compensate for the other. Scale and radius are only weakly
+anti-correlated (r ≈ −0.1). The plateau $I(0) \\propto \\mathrm{scale}\\cdot r^3$
+couples them, but the minima fix the radius independently. The predictive band
+is widest near the minima and at high q, where the signal approaches the
+background. The R-hat values of this short classroom run remain above the
+convergence target, so the chain must be lengthened and rechecked before any
+credible interval is reported.""",
+        'Summarize what DREAM adds beyond the best fit, answering questions 1–5 above. '
+        'Refer to the credible intervals, the trace plots, the correlations, and the '
+        'predictive band.',
     )
     cells = [
         markdown(
@@ -1337,8 +1481,8 @@ For this workshop, `set_param(..., min=a, max=b, vary=True)` defines a
 plausible and values outside are forbidden. This is not merely an optimizer
 safety rail. Bounds must therefore be scientifically defensible.
 
-Configure the same sphere model as before. Keep known SLD values fixed and use
-bounded priors for radius, scale, and background.
+Configure the same sphere model as in notebook 01. Keep the SLDs fixed and give
+radius, scale and background bounded uniform priors.
 
 **Where the likelihood comes from.** If each measured point is Gaussian with
 standard deviation `dI`, then
@@ -1433,7 +1577,7 @@ Write a short report addressing:
 4. Where is the predictive band widest?
 5. What would you change before publishing these intervals?"""
         ),
-        code(interpretation),
+        interpretation,
         markdown(
             """## Optional export
 
@@ -1490,15 +1634,25 @@ def write_notebooks() -> None:
 
 
 def check_notebooks() -> None:
-    """Validate student tasks and execute solutions without changing source notebooks."""
+    """Validate student tasks, then execute solutions and task-free student notebooks.
+
+    Student tasks may only ask for sans_fitter calls, so every task cell must be
+    marked `YOUR CODE HERE`. Source notebooks are executed into a temporary
+    directory and stay clean.
+    """
+    runnable = []
     for notebook_path in sorted(NOTEBOOK_DIR.glob('*.ipynb')):
         notebook_data = json.loads(notebook_path.read_text(encoding='utf-8'))
-        if notebook_path.name != '00_start_here.ipynb':
-            sources = '\n'.join(
-                ''.join(cell.get('source', [])) for cell in notebook_data.get('cells', [])
-            )
-            if 'YOUR CODE HERE' not in sources or 'NotImplementedError' not in sources:
-                raise ValueError(f'{notebook_path} does not contain required student tasks')
+        has_task = False
+        for cell in notebook_data.get('cells', []):
+            source = ''.join(cell.get('source', []))
+            if 'NotImplementedError' in source:
+                has_task = True
+                if 'YOUR CODE HERE' not in source:
+                    raise ValueError(f'{notebook_path} has an unmarked student task')
+        if not has_task:
+            runnable.append(notebook_path)
+    runnable += sorted(SOLUTION_DIR.glob('*.ipynb'))
 
     environment = dict(os.environ)
     environment['MPLBACKEND'] = 'Agg'
@@ -1507,8 +1661,10 @@ def check_notebooks() -> None:
     environment['PYTHONPATH'] = (
         f'{source_path}{os.pathsep}{existing_pythonpath}' if existing_pythonpath else source_path
     )
-    with tempfile.TemporaryDirectory(prefix='sans-workshop-') as output_dir:
-        for notebook_path in sorted(SOLUTION_DIR.glob('*.ipynb')):
+    with tempfile.TemporaryDirectory(prefix='sans-workshop-') as output_root:
+        for notebook_path in runnable:
+            output_dir = Path(output_root) / notebook_path.parent.name
+            output_dir.mkdir(exist_ok=True)
             print(f'Executing {notebook_path.relative_to(ROOT)}')
             subprocess.run(
                 [
@@ -1521,7 +1677,7 @@ def check_notebooks() -> None:
                     '--execute',
                     '--ExecutePreprocessor.timeout=300',
                     '--output-dir',
-                    output_dir,
+                    str(output_dir),
                     str(notebook_path),
                 ],
                 cwd=ROOT,
