@@ -280,19 +280,27 @@ with the sample composition, not only with the curve. Use this as a check.
 ```python
 fitter = SANSFitter()
 fitter.load_data(str(ROOT / 'mystery_data' / 'sample_A.csv'))
+fitter.set_resolution('none')
 
 # Look before you fit: the data with a candidate model at its current values.
 fitter.set_model('sphere')
-fig = fitter.plot_model()
+fitter.plot_model()
+```
 
-# ...set parameters, then fit and summarize:
+Then set the parameters, fit and summarize, in separate cells:
+
+```python
 fitter.fit(engine='lmfit', method='least_squares')
-fitter.plot_results(show_residuals=True, log_scale=True)
 report = fitter.get_fit_report()
 report                  # a table in the notebook; print(report) for plain text
 ```
 
-`report.to_markdown()` gives the same table in Markdown, ready to paste into
+```python
+fitter.plot_results(show_residuals=True, log_scale=True)
+```
+
+A figure is displayed when the plotting command is the last line of its cell.
+`report.to_markdown()` gives the fit report in Markdown, ready to paste into
 your report.
 
 Use the setup cell from any workshop notebook to define `ROOT` and import
@@ -311,7 +319,8 @@ Use the setup cell from any workshop notebook to define `ROOT` and import
   parameter a Gaussian distribution and fit its width:
 
   ```python
-  fitter.set_polydispersity('radius', width=0.1, min=0.0, max=0.4, vary=True)
+  fitter.enable_polydispersity(True)
+  fitter.set_pd_param('radius', pd_width=0.1, vary=True)
   ```
 
   Size and polydispersity are strongly correlated (slide 34): a larger particle
@@ -321,10 +330,12 @@ Use the setup cell from any workshop notebook to define `ROOT` and import
 - **Background.** The flat high-q level comes mainly from incoherent
   scattering of hydrogen (slide 15). Is its size consistent with the solvent?
 - **Structure factors.** `set_structure_factor('hardsphere')` and the others
-  from notebook 03 work with any spherical form factor.
-- **Reduced χ².** The fit report gives the reduced χ², its expected range and
-  the residual checks for every engine. Judge them together with the residual
-  plot (slide 33), and look for parameters the report flags as stuck on a bound.
+  from notebook 03 work with any spherical form factor. As in notebook 03, call
+  `set_param('radius_effective_mode', value=0)` afterwards if you want to fit
+  `radius_effective` yourself.
+- **Reduced χ².** The fit report gives χ²/dof and the correlations between
+  fitted parameters for every engine. Judge them together with the residual plot
+  (slide 33), and look for parameters the report flags as on a bound.
 - **Kratky plot.** Plotting $I\\cdot Q^2$ against $Q$ (slide 50) quickly
   separates compact objects (a peak), flexible chains (a plateau) and rods (a
   steady rise).

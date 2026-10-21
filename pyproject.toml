@@ -3,33 +3,31 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sans-fitter"
-version = "0.1.0"
-description = "Self-contained Masters workshop for SANS model fitting"
+name = "sans-analysis-workshop"
+version = "0.2.0"
+description = "Masters workshop on SANS model fitting with sans-fitter"
 requires-python = ">=3.10"
 license = {text = "BSD-3-Clause"}
 authors = [{name = "SANS Data Analysis Workshop contributors"}]
 readme = "README.md"
 dependencies = [
-    "numpy>=1.20",
+    "sans-fitter>=0.4,<0.5",
+    "numpy>=2.0",
     "matplotlib>=3.5",
-    "scipy>=1.7",
-    "sasmodels>=1.0",
-    "sasdata>=0.8",
-    "bumps>=0.9",
+    "jupyterlab>=4.0",
 ]
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "jupyter>=1.0",
-    "nbclient>=0.10",
+    "nbconvert>=7.0",
+    "ipykernel>=6.0",
     "ruff>=0.8.0",
 ]
+
+[tool.setuptools]
+# The workshop is notebooks, data and scripts: there is no Python package to install.
+packages = []
+py-modules = []
 
 [tool.pixi.workspace]
 name = "sans-analysis-workshop"
@@ -37,33 +35,30 @@ channels = ["conda-forge"]
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 
 [tool.pixi.pypi-dependencies]
-sans-fitter = { path = ".", editable = true }
+sans-fitter = ">=0.4, <0.5"
 
 [tool.pixi.dependencies]
 python = ">=3.10,<3.14"
-numpy = ">=1.20"
+numpy = ">=2.0"
 matplotlib = ">=3.5"
 scipy = ">=1.7"
 sasmodels = ">=1.0"
-bumps = ">=0.9"
-pytest = ">=7.0"
-pytest-cov = ">=4.0"
-jupyter = ">=1.0"
+bumps = ">=1.0"
+plotly = ">=5.0"
+jupyterlab = ">=4.0"
+nbconvert = ">=7.0"
+ipykernel = ">=6.0"
 ruff = ">=0.8.0"
 
 [tool.pixi.tasks]
-test = "pytest tests/ -v"
-test-verbose = "pytest tests/ -vv"
-test-coverage = "pytest tests/ --cov=. --cov-report=html --cov-report=term --cov-report=xml"
-test-quick = "pytest tests/ -v -x"
-lint = "ruff check src/ tests/ scripts/ --fix"
-lint-check = "ruff check src/ tests/ scripts/"
-format = "ruff format src/ tests/ scripts/"
-format-check = "ruff format --check src/ tests/ scripts/"
 workshop = "jupyter lab exercises"
 generate-workshop-data = "python scripts/generate_workshop.py --data-only"
 generate-mystery-data = "python scripts/generate_mystery_data.py"
 check-workshop = "python scripts/generate_workshop.py --check"
+lint = "ruff check scripts/ --fix"
+lint-check = "ruff check scripts/"
+format = "ruff format scripts/"
+format-check = "ruff format --check scripts/"
 
 [tool.ruff]
 line-length = 100
@@ -93,53 +88,3 @@ multiline-quotes = "single"
 
 [tool.ruff.format]
 quote-style = "single"
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]  # unused imports in __init__.py
-"tests/*" = ["F401", "F811"]  # allow unused imports and redefinitions in tests
-
-[tool.pytest.ini_options]
-# Pytest configuration for the bundled fitting helper
-
-# Test discovery
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-
-# Output options
-addopts = [
-    "-v",                          # Verbose output
-    "--tb=short",                  # Shorter traceback format
-    "--strict-markers",            # Strict marker usage
-    "-ra",                         # Show summary of all test outcomes
-    "--disable-warnings",          # Disable warnings display
-]
-
-# Markers
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-]
-
-# Coverage options (if pytest-cov is installed)
-[tool.coverage.run]
-source = ["."]
-omit = [
-    "*/tests/*",
-    "*/test_*.py",
-    "*/__pycache__/*",
-    "*/venv/*",
-    "*/env/*",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-]

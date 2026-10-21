@@ -18,15 +18,12 @@ jobs:
           cache: pip
 
       - name: Install workshop
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install ".[dev]"
 
       - name: Check code quality
         run: |
-          ruff check src tests scripts
-          ruff format --check src tests scripts
-
-      - name: Run fitting tests
-        run: pytest
+          ruff check scripts
+          ruff format --check scripts
 
       - name: Execute workshop notebooks
         env:
