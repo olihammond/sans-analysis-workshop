@@ -978,6 +978,82 @@ class TestPolydispersity(unittest.TestCase):
         self.assertIn('radius_pd', result['parameters'])
 
 
+class TestFitReportAndModelPlot(unittest.TestCase):
+    """Test the fit report and the pre-fit model plot."""
+
+    def setUp(self):
+        """Fit a sphere to the workshop reference data."""
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.data_file = os.path.join(root, 'data', 'sphere_reference.csv')
+        self.fitter = SANSFitter()
+        self.fitter.load_data(self.data_file)
+        self.fitter.set_model('sphere')
+        self.fitter.set_param('sld', value=4.2, vary=False)
+        self.fitter.set_param('sld_solvent', value=1.0, vary=False)
+        self.fitter.set_param('radius', value=50, min=20, max=100, vary=True)
+        self.fitter.set_param('scale', value=0.05, min=0.001, max=0.2, vary=True)
+        self.fitter.set_param('background', value=0.002, min=0, max=0.01, vary=True)
+
+    def tearDown(self):
+        """Close figures created by the tests."""
+        import matplotlib.pyplot as plt
+
+        plt.close('all')
+
+    def test_report_requires_fit(self):
+        """Test that a report needs a completed fit."""
+        with self.assertRaises(ValueError):
+            self.fitter.get_fit_report()
+
+    def test_report_contents(self):
+        """Test parameter values, uncertainties and fit statistics."""
+        self.fitter.fit(engine='lmfit', method='least_squares')
+        report = self.fitter.get_fit_report()
+        self.assertEqual(report.n_fitted, 3)
+        self.assertEqual(report.dof, report.n_points - 3)
+        self.assertAlmostEqual(report.parameters['radius']['value'], 58.0, delta=0.5)
+        self.assertGreater(report.parameters['radius']['stderr'], 0)
+        self.assertFalse(report.parameters['sld']['vary'])
+        self.assertAlmostEqual(report.reduced_chisq, report.chisq / report.dof)
+        self.assertLess(abs(report.reduced_chisq - 1), 0.5)
+        self.assertGreater(report.residuals_within_2, 0.9)
+
+    def test_report_formats(self):
+        """Test the plain-text, Markdown and HTML renderings."""
+        self.fitter.fit(engine='lmfit', method='least_squares')
+        report = self.fitter.get_fit_report()
+        self.assertIn('radius', str(report))
+        self.assertIn('| radius |', report.to_markdown())
+        self.assertIn('<table>', report._repr_html_())
+
+    def test_report_chisq_agrees_between_engines(self):
+        """Test that the report's chi-squared does not depend on the engine."""
+        self.fitter.fit(engine='lmfit', method='least_squares')
+        lmfit_report = self.fitter.get_fit_report()
+        self.fitter.fit(engine='bumps', method='amoeba')
+        bumps_report = self.fitter.get_fit_report()
+        self.assertAlmostEqual(lmfit_report.reduced_chisq, bumps_report.reduced_chisq, delta=0.05)
+
+    def test_report_flags_parameter_at_bound(self):
+        """Test that a parameter stuck on a bound is flagged."""
+        self.fitter.set_param('radius', value=15, min=10, max=200, vary=True)
+        self.fitter.fit(engine='lmfit', method='least_squares')
+        report = self.fitter.get_fit_report()
+        self.assertEqual(report.parameters['radius']['note'], 'at lower bound')
+
+    def test_plot_model_before_fit(self):
+        """Test that the current model can be drawn over the data without fitting."""
+        figure = self.fitter.plot_model()
+        self.assertEqual(len(figure.axes[0].lines), 2)
+
+    def test_plot_model_without_data(self):
+        """Test that the model can be drawn without loaded data."""
+        fitter = SANSFitter()
+        fitter.set_model('ellipsoid')
+        figure = fitter.plot_model()
+        self.assertEqual(len(figure.axes[0].lines), 1)
+
+
 if __name__ == '__main__':
     # Run tests with verbosity
     unittest.main(verbosity=2)

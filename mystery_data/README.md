@@ -26,7 +26,20 @@ with the sample composition, not only with the curve. Use this as a check.
 ```python
 fitter = SANSFitter()
 fitter.load_data(str(ROOT / 'mystery_data' / 'sample_A.csv'))
+
+# Look before you fit: the data with a candidate model at its current values.
+fitter.set_model('sphere')
+fig = fitter.plot_model()
+
+# ...set parameters, then fit and summarize:
+fitter.fit(engine='lmfit', method='least_squares')
+fitter.plot_results(show_residuals=True, log_scale=True)
+report = fitter.get_fit_report()
+report                  # a table in the notebook; print(report) for plain text
 ```
+
+`report.to_markdown()` gives the same table in Markdown, ready to paste into
+your report.
 
 Use the setup cell from any workshop notebook to define `ROOT` and import
 `SANSFitter`.
@@ -55,9 +68,9 @@ Use the setup cell from any workshop notebook to define `ROOT` and import
   scattering of hydrogen (slide 15). Is its size consistent with the solvent?
 - **Structure factors.** `set_structure_factor('hardsphere')` and the others
   from notebook 03 work with any spherical form factor.
-- **Reduced χ².** Use `engine='bumps'` to get χ²/(N − p) directly, or divide the
-  `lmfit` value by N − p yourself. Judge it together with the residuals
-  (slide 33).
+- **Reduced χ².** The fit report gives the reduced χ², its expected range and
+  the residual checks for every engine. Judge them together with the residual
+  plot (slide 33), and look for parameters the report flags as stuck on a bound.
 - **Kratky plot.** Plotting $I\cdot Q^2$ against $Q$ (slide 50) quickly
   separates compact objects (a peak), flexible chains (a plateau) and rods (a
   steady rise).

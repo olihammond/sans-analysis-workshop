@@ -21,9 +21,10 @@ from sasmodels.bumps_model import Model as BumpsModel
 
 # SasModels and SasData imports
 from sasmodels.core import list_models, load_model
+from sasmodels.data import empty_data1D
 from sasmodels.direct_model import DirectModel
 
-from .results import PosteriorSummary
+from .results import FitReport, PosteriorSummary
 
 try:
     from scipy.optimize import differential_evolution, least_squares, leastsq
@@ -35,6 +36,7 @@ except ImportError:
 
 
 _PD_SUFFIXES = ('_pd', '_pd_n', '_pd_nsigma')
+_CONTROL_PARAMETERS = ('radius_effective_mode', 'structure_factor_mode')
 
 
 def _model_name_hint(model_name: str) -> str:
@@ -982,6 +984,67 @@ class SANSFitter:
         plt.tight_layout()
         plt.show()
 
+    def plot_model(self, show_data: bool = True, log_scale: bool = True) -> plt.Figure:
+        """
+        Plot the current model, with its current parameter values, over the data.
+
+        No fit is needed: use it to look at the data together with a candidate
+        model and its starting values before fitting. Without loaded data, the
+        model is drawn over 0.001-0.5 Å⁻¹.
+
+        Args:
+            show_data: If True and data are loaded, plot them with error bars
+            log_scale: If True, use log scale for both axes
+
+        Returns:
+            The Matplotlib figure
+
+        Raises:
+            ValueError: If no model is loaded
+        """
+        if self.kernel is None:
+            raise ValueError('No model loaded. Use set_model() first.')
+
+        parameters = {name: info['value'] for name, info in self.params.items()}
+        if self._radius_effective_mode == 'link_radius' and 'radius' in parameters:
+            parameters['radius_effective'] = parameters['radius']
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        if self.data is not None:
+            valid = ~self.data.mask
+            q = self.data.x[valid]
+            model_intensity = np.asarray(DirectModel(self.data, self.kernel)(**parameters))
+            if model_intensity.shape == self.data.y.shape:
+                model_intensity = model_intensity[valid]
+            if show_data:
+                ax.errorbar(
+                    q,
+                    self.data.y[valid],
+                    yerr=self.data.dy[valid],
+                    fmt='o',
+                    ms=3,
+                    alpha=0.6,
+                    label='Data',
+                )
+        else:
+            q = np.logspace(np.log10(0.001), np.log10(0.5), 300)
+            model_intensity = np.asarray(DirectModel(empty_data1D(q), self.kernel)(**parameters))
+
+        name = self.model_name
+        if self._structure_factor_name:
+            name = f'{name}@{self._structure_factor_name}'
+        ax.plot(q, model_intensity, 'r-', linewidth=2, label=f'{name} (current parameters)')
+        ax.set_xlabel('Q (Å⁻¹)')
+        ax.set_ylabel('I(Q)')
+        ax.set_title(f'Model {name} with current parameter values (not fitted)')
+        if log_scale:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        fig.tight_layout()
+        return fig
+
     def _fit_arrays(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Return selected q, intensity, uncertainty, and fitted intensity arrays."""
         valid = ~self.data.mask
@@ -1001,6 +1064,75 @@ class SANSFitter:
         if I_fit.shape != selected_intensity.shape:
             raise ValueError('Fitted curve shape does not match the selected data range.')
         return selected_q, selected_intensity, selected_uncertainty, I_fit
+
+    def get_fit_report(self) -> FitReport:
+        """
+        Summarize the latest fit as a table of parameters and fit-quality checks.
+
+        The report works the same way for every engine. It recomputes chi-squared
+        as the sum of squared normalized residuals over the selected q range, so
+        the reduced value chi^2 / (N - p) is comparable between engines. It also
+        reports the two residual checks from the lecture: the fraction of
+        normalized residuals within +/-2 and the number of sign changes.
+
+        ``print(report)`` gives plain text, ``report`` renders an HTML table in a
+        notebook, ``report.to_markdown()`` returns Markdown, and
+        ``report.parameters`` is a dict of name -> {value, stderr, vary, min, max, note}.
+
+        Raises:
+            ValueError: If no fit has been run yet
+        """
+        if self.fit_result is None:
+            raise ValueError('No fit results available. Run fit() or fit_bayesian() first.')
+
+        q, intensity, uncertainty, model_intensity = self._fit_arrays()
+        residuals = (intensity - model_intensity) / uncertainty
+        fitted = [name for name, info in self.params.items() if info['vary']]
+        linked = self._radius_effective_mode == 'link_radius'
+
+        parameters: dict[str, dict[str, object]] = {}
+        for name, info in self.params.items():
+            if name in _CONTROL_PARAMETERS or name.endswith(('_pd_n', '_pd_nsigma')):
+                continue  # integration and mode settings, not physical parameters
+            value = float(info['value'])
+            note = ''
+            if linked and name == 'radius_effective' and 'radius' in self.params:
+                value = float(self.params['radius']['value'])
+                note = 'linked to radius'
+            stderr = None
+            if info['vary']:
+                stderr = self.fit_result['parameters'].get(name, {}).get('stderr')
+                stderr = None if stderr is None else float(stderr)
+                low, high = float(info['min']), float(info['max'])
+                if np.isfinite(low) and np.isfinite(high) and high > low:
+                    tolerance = 1e-3 * (high - low)
+                    if value - low <= tolerance:
+                        note = 'at lower bound'
+                    elif high - value <= tolerance:
+                        note = 'at upper bound'
+            parameters[name] = {
+                'value': value,
+                'stderr': stderr,
+                'vary': bool(info['vary']),
+                'min': float(info['min']),
+                'max': float(info['max']),
+                'note': note,
+            }
+
+        model = self.model_name
+        if self._structure_factor_name:
+            model = f'{model}@{self._structure_factor_name}'
+        return FitReport(
+            model=str(model),
+            engine=str(self.fit_result['engine']),
+            method=str(self.fit_result['method']),
+            n_points=int(len(q)),
+            n_fitted=len(fitted),
+            chisq=float(np.sum(residuals**2)),
+            parameters=parameters,
+            residuals_within_2=float(np.mean(np.abs(residuals) < 2)),
+            sign_changes=int(np.count_nonzero(np.diff(np.sign(residuals)))),
+        )
 
     def get_posterior(self) -> PosteriorSummary:
         """Return samples and summaries from the latest Bayesian fit."""

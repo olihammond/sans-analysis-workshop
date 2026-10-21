@@ -93,7 +93,8 @@ On Windows, activate the environment with `.venv\Scripts\activate`.
 Student workbooks are in [`exercises/`](exercises/). This is a SANS workshop,
 not a programming course. The only code students write is `sans_fitter` calls
 they have just been shown (`set_model`, `set_param`, `fit`, `plot_results`,
-`set_structure_factor`, `fit_bayesian` and the posterior plots), in cells
+`plot_model`, `get_fit_report`, `set_structure_factor`, `fit_bayesian` and the
+posterior plots), in cells
 marked `YOUR CODE HERE` that list the exact lines to add. Everything else
 (functions, loops, reading values out of results, NumPy formulas) is provided
 and commented. Scientific answers go in **Your answer** text cells. Fully

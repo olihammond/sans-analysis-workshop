@@ -450,8 +450,7 @@ raise NotImplementedError('Add the set_param lines, then delete this line')
     )
     fit_call = (
         """# Run a bounded least-squares fit, starting from the values set above.
-# The returned dictionary, stored in `result`, holds the fitted parameters.
-result = fitter.fit(engine='lmfit', method='least_squares')
+fitter.fit(engine='lmfit', method='least_squares')
 
 # Top panel: data and model. Bottom panel: normalized residuals,
 # (data - model) / dI, i.e. the misfit in units of the error bar.
@@ -459,7 +458,7 @@ fitter.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
         else """# YOUR CODE HERE: two lines.
-#   1. Fit with  result = fitter.fit(engine='lmfit', method='least_squares')
+#   1. Fit with  fitter.fit(engine='lmfit', method='least_squares')
 #   2. Plot with fitter.plot_results(show_residuals=True, log_scale=True)
 # Delete the `raise` line below when your lines are in place.
 raise NotImplementedError('Add the fit and plot lines, then delete this line')
@@ -559,7 +558,8 @@ Every fit follows the same sequence:
 3. select a SasModels model with `set_model('model_name')`;
 4. inspect its parameters with `get_params()`;
 5. configure each parameter with `set_param(...)`;
-6. call `fit(...)` and inspect the residuals.
+6. call `fit(...)` and inspect the residuals with `plot_results(...)`;
+7. summarize the result with `get_fit_report()`.
 
 The first two steps are done for you below. You will then choose the model,
 set the parameters and run the fit yourself, using only the commands listed
@@ -614,9 +614,9 @@ units of 10⁻⁶ Å⁻², the "SLD units" of slide 12."""
             """### Running the optimizer
 
 `fit(engine='lmfit', method='least_squares')` performs a bounded local
-least-squares fit. The returned dictionary contains the objective value and
-fitted parameters. `plot_results(...)` overlays the model and displays
-normalized residuals.
+least-squares fit. `plot_results(...)` overlays the model and displays
+normalized residuals. Afterwards, `get_fit_report()` summarizes the fit in one
+table (used in Exercise 3).
 
 **What the optimizer actually does.** It searches for the parameters $\\theta$
 that minimize
@@ -641,13 +641,14 @@ Two practical notes:
             + SCIPY_LEAST_SQUARES
             + """), a bounded trust-region method that only searches downhill from the
   starting point.
-- With `engine='lmfit'`, `result['chisq']` is the **sum** above. The BUMPS
-  engine reports the **reduced** value $\\chi^2/(N-p)$, which is ≈ 1 for a good
-  fit ($N$ data points, $p$ fitted parameters). Compare like with like."""
+- While it runs, `fit()` prints a χ²: the **sum** above for `engine='lmfit'`,
+  but the **reduced** value $\\chi^2/(N-p)$ for the BUMPS engine ($N$ data
+  points, $p$ fitted parameters). The fit report always gives both, calculated
+  the same way, so use it to compare fits."""
         ),
         code(fit_call),
         markdown(
-            """## Exercise 3 — Criticize, do not merely accept
+            """## Exercise 3 — For your now-expert critique!
 
 Record:
 
@@ -684,24 +685,16 @@ why the minima are so sharp. Say which one you would expect to matter most for a
 real measurement, and why."""
         ),
         code(
-            """# result['parameters'][name]['formatted'] is the fitted value with its
-# uncertainty, written as text.
-for name in ['radius', 'scale', 'background']:
-    print(name, result['parameters'][name]['formatted'])
+            """# The fit report: every parameter with its uncertainty, whether it was fitted
+# or fixed and whether it ended on a bound, plus the slide-33 checks: reduced χ²
+# with its expected range, residuals within ±2, and residual sign changes.
+report = fitter.get_fit_report()
+report
 
-# Reduced chi-squared: the sum of squared normalized residuals divided by
-# nu = (number of data points - number of fitted parameters).
-n_points = np.count_nonzero(~fitter.data.mask)
-nu = n_points - 3
-print(f"Reduced chi-squared: {result['chisq'] / nu:.2f} "
-      f'(expected 1 ± {np.sqrt(2 / nu):.2f} for nu = {nu})')
-
-# The two residual checks from slide 33, using the data and fitted model.
-_, data_I, data_dI, model_I = fitter._fit_arrays()
-residuals = (data_I - model_I) / data_dI
-sign_changes = np.count_nonzero(np.diff(np.sign(residuals)))
-print(f'Residuals within ±2: {np.mean(np.abs(residuals) < 2):.0%}')
-print(f'Sign changes: {sign_changes} (random scatter gives about {n_points // 2})')
+# Other ways to use the same report:
+#   print(report)                          plain-text table
+#   report.to_markdown()                   Markdown, e.g. for your notes
+#   report.parameters['radius']['value']   one number
 """
         ),
         answer(
@@ -737,21 +730,26 @@ tells you *how well* the radius is determined. That question, the theme of slide
 
 Remember the χ² note above when you compare the two engines' numbers.
 
-The cell below runs both experiments for you. Read the two printed radii and
-compare the two residual plots."""
+The cell below runs both experiments for you. Compare the two residual plots
+and the two printed reports. Which parameter does the first report flag?"""
         ),
         code(
             """# 1. The same local optimizer, from a deliberately poor start of 15 Å.
 fitter.set_param('radius', value=15, min=10, max=200, vary=True)
-local_result = fitter.fit(engine='lmfit', method='least_squares')
+fitter.fit(engine='lmfit', method='least_squares')
 fitter.plot_results(show_residuals=True, log_scale=True)
+local_report = fitter.get_fit_report()
 
 # 2. Differential evolution, a population search over the whole min-max range.
-global_result = fitter.fit(engine='bumps', method='de', steps=200)
+fitter.fit(engine='bumps', method='de', steps=200)
 fitter.plot_results(show_residuals=True, log_scale=True)
+global_report = fitter.get_fit_report()
 
-print('Local optimizer radius:       ', local_result['parameters']['radius']['formatted'])
-print('Differential evolution radius:', global_result['parameters']['radius']['formatted'])
+print('LOCAL OPTIMIZER FROM 15 Å')
+print(local_report)
+print()
+print('DIFFERENTIAL EVOLUTION')
+print(global_report)
 """
         ),
         markdown(
@@ -797,11 +795,12 @@ particles, would make the distinction stronger.""",
     fitter.set_param('radius', value=45, min=10, max=180, vary=True)
     fitter.set_param('scale', value=0.04, min=0.001, max=0.2, vary=True)
     fitter.set_param('background', value=0.002, min=0, max=0.02, vary=True)
-    return fitter, fitter.fit(engine='lmfit', method='least_squares')
+    fitter.fit(engine='lmfit', method='least_squares')
+    return fitter
 
 
 # Fit the full q range and show the residuals.
-sphere, sphere_result = fit_sphere()
+sphere = fit_sphere()
 sphere.plot_results(show_residuals=True, log_scale=True)
 """
     ellipsoid_fit = (
@@ -820,7 +819,7 @@ ellipsoid.set_param('scale', value=0.04, min=0.001, max=0.2, vary=True)
 ellipsoid.set_param('background', value=0.002, min=0, max=0.02, vary=True)
 ellipsoid.get_params()
 
-ellipsoid_result = ellipsoid.fit(engine='lmfit', method='least_squares')
+ellipsoid.fit(engine='lmfit', method='least_squares')
 ellipsoid.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
@@ -833,9 +832,9 @@ ellipsoid.load_data(str(filename))
 #      its parameters (it has radius_polar and radius_equatorial).
 #   2. set_param lines: fix both SLDs as before; give the two radii, scale and
 #      background starting values, bounds and vary=True.
-#   3. ellipsoid_result = ellipsoid.fit(engine='lmfit', method='least_squares')
+#   3. ellipsoid.fit(engine='lmfit', method='least_squares')
 #   4. ellipsoid.plot_results(show_residuals=True, log_scale=True)
-# Keep the names `ellipsoid` and `ellipsoid_result`: later cells use them.
+# Keep the name `ellipsoid`: later cells use it.
 # Delete the `raise` line below when your lines are in place.
 raise NotImplementedError('Configure and fit the ellipsoid, then delete this line')
 """
@@ -852,8 +851,9 @@ ellipsoid_short.set_param('radius_polar', value=100, min=15, max=220, vary=True)
 ellipsoid_short.set_param('radius_equatorial', value=40, min=10, max=120, vary=True)
 ellipsoid_short.set_param('scale', value=0.04, min=0.001, max=0.2, vary=True)
 ellipsoid_short.set_param('background', value=0.002, min=0, max=0.02, vary=True)
-ellipsoid_short_result = ellipsoid_short.fit(engine='lmfit', method='least_squares')
+ellipsoid_short.fit(engine='lmfit', method='least_squares')
 ellipsoid_short.plot_results(show_residuals=True, log_scale=True)
+print(ellipsoid_short.get_fit_report())
 """
         if solution
         else """# Ellipsoid on the restricted window.
@@ -863,9 +863,10 @@ ellipsoid_short.set_q_range(qmin=0.004, qmax=0.025)
 
 # YOUR CODE HERE: repeat your ellipsoid setup from Exercise 1 for
 # `ellipsoid_short` (set_model, set_param lines), then
-#   ellipsoid_short_result = ellipsoid_short.fit(engine='lmfit', method='least_squares')
+#   ellipsoid_short.fit(engine='lmfit', method='least_squares')
 #   ellipsoid_short.plot_results(show_residuals=True, log_scale=True)
-# Keep the name `ellipsoid_short_result`: the next cells use it.
+#   print(ellipsoid_short.get_fit_report())
+# Keep the name `ellipsoid_short`: the next cells use it.
 # Delete the `raise` line below when your lines are in place.
 raise NotImplementedError('Fit the ellipsoid on the restricted range, then delete this line')
 """
@@ -901,20 +902,29 @@ the work: one partner advocates for a sphere, the other for an ellipsoid."""
         code(SETUP),
         code(
             """filename = DATA / 'mystery_shape.csv'
-values = np.genfromtxt(filename, delimiter=',', names=True)
-fig, ax = plt.subplots(figsize=(8, 5))
-ax.errorbar(values['Q'], values['I'], yerr=values['dI'], fmt='o', ms=3)
-ax.set(xscale='log', yscale='log', xlabel=r'$q$ / Å$^{-1}$', ylabel=r'$I(q)$')
-ax.grid(alpha=0.25)
-plt.show()
+
+# Load the data and draw a candidate model, with its starting values, on top.
+# Nothing is fitted yet: plot_model() only shows the model as it stands.
+preview = SANSFitter()
+preview.load_data(str(filename))
+preview.set_model('sphere')
+preview.set_param('sld', value=4.2)
+preview.set_param('sld_solvent', value=1.0)
+preview.set_param('radius', value=45)
+preview.set_param('scale', value=0.04)
+preview.set_param('background', value=0.002)
+fig = preview.plot_model()
 """
         ),
         markdown(
             """### Look before you fit
 
 The lecture's fitting strategy (slide 32) starts with reading the data, not
-with the optimizer. Compare this curve with `sphere_reference.csv` from
-notebook 01:
+with the optimizer. `plot_model()` draws the data with a candidate model, here
+a 45 Å sphere, the starting point of the sphere fit below. Change the
+`radius` value in that cell and rerun it: can any single sphere radius match
+both the plateau and the decay? Then compare the data with
+`sphere_reference.csv` from notebook 01:
 
 - Are the form-factor minima as deep and sharp? Shallow, washed-out minima
   can mean polydispersity or smearing, but also **anisotropy**: an
@@ -946,10 +956,13 @@ fair start for testing an elongated particle?"""
         ),
         code(ellipsoid_fit),
         code(
-            """print('Sphere objective:', sphere_result['chisq'])
-print('Ellipsoid objective:', ellipsoid_result['chisq'])
-for name in ['radius_polar', 'radius_equatorial']:
-    print(name, ellipsoid_result['parameters'][name]['formatted'])
+            """# The two fit reports, one above the other. Compare the reduced χ², the
+# residual checks, and whether the fitted sizes are physically reasonable.
+print('SPHERE')
+print(sphere.get_fit_report())
+print()
+print('ELLIPSOID')
+print(ellipsoid.get_fit_report())
 """
         ),
         markdown(
@@ -965,9 +978,9 @@ it compare with the particle dimensions you just fitted?"""
         ),
         code(
             """# Sphere: reuse fit_sphere from Exercise 1, now with only 0.004 <= q <= 0.025 Å^-1.
-sphere_short, sphere_short_result = fit_sphere(qmin=0.004, qmax=0.025)
+sphere_short = fit_sphere(qmin=0.004, qmax=0.025)
 sphere_short.plot_results(show_residuals=True, log_scale=True)
-print('Restricted sphere radius:', sphere_short_result['parameters']['radius']['formatted'])
+print(sphere_short.get_fit_report())
 """
         ),
         code(short_range),
@@ -994,9 +1007,9 @@ parameter sets, so the optimizer's single answer is not a measurement of
 shape. Notebook 04 shows the same idea as correlated posterior distributions."""
         ),
         code(
-            """def value(result, name):
-    # The fitted number for one parameter.
-    return result['parameters'][name]['value']
+            """def value(fitter, name):
+    # The fitted number for one parameter, read from the fit report.
+    return fitter.get_fit_report().parameters[name]['value']
 
 
 def rg_spheroid(r_equatorial, r_polar):
@@ -1007,20 +1020,20 @@ def rg_sphere(radius):
     return np.sqrt(3 / 5) * radius
 
 
-rg_sphere_short = rg_sphere(value(sphere_short_result, 'radius'))
+rg_sphere_short = rg_sphere(value(sphere_short, 'radius'))
 rg_ellipsoid_short = rg_spheroid(
-    value(ellipsoid_short_result, 'radius_equatorial'),
-    value(ellipsoid_short_result, 'radius_polar'),
+    value(ellipsoid_short, 'radius_equatorial'),
+    value(ellipsoid_short, 'radius_polar'),
 )
 rg_ellipsoid_full = rg_spheroid(
-    value(ellipsoid_result, 'radius_equatorial'), value(ellipsoid_result, 'radius_polar')
+    value(ellipsoid, 'radius_equatorial'), value(ellipsoid, 'radius_polar')
 )
 
 print(f'1. Restricted range: Rg(sphere) = {rg_sphere_short:.1f} Å, '
       f'Rg(ellipsoid) = {rg_ellipsoid_short:.1f} Å')
 print(f'2. Qmax * Rg = 0.025 * {rg_ellipsoid_full:.1f} = {0.025 * rg_ellipsoid_full:.2f}')
 print(f'3. Sphere with the full-range ellipsoid Rg: R = {np.sqrt(5 / 3) * rg_ellipsoid_full:.1f} Å; '
-      f'restricted sphere fit: R = {value(sphere_short_result, "radius"):.1f} Å')
+      f'restricted sphere fit: R = {value(sphere_short, "radius"):.1f} Å')
 """
         ),
         *(
@@ -1084,8 +1097,9 @@ The hard-sphere structure factor describes excluded-volume correlations between
 neighbouring particles. The peak comes from the typical nearest-neighbour
 distance, about twice `radius_effective`. The effective radius exceeds the
 form-factor radius because the interaction range can include a solvation or
-stabilizer layer that is invisible at this contrast. Linking the two radii makes
-χ² several times worse, so these data do not support that constraint. The fitted
+stabilizer layer that is invisible at this contrast. Linking the two radii raises
+the reduced χ² about tenfold (≈ 14 against ≈ 1.4), so these data do not support
+that constraint. The fitted
 volume fraction
 is model-dependent: charge, attraction, polydispersity, or anisotropy would
 change it. A dilution series would confirm the interpretation, since the peak
@@ -1104,7 +1118,7 @@ dilute.set_param('sld_solvent', value=1.0, vary=False)
 dilute.set_param('radius', value=40, min=15, max=90, vary=True)
 dilute.set_param('scale', value=0.05, min=0.001, max=0.2, vary=True)
 dilute.set_param('background', value=0.002, min=0, max=0.02, vary=True)
-dilute_result = dilute.fit(engine='lmfit', method='least_squares')
+dilute.fit(engine='lmfit', method='least_squares')
 dilute.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
@@ -1116,9 +1130,9 @@ dilute.load_data(str(filename))
 #   1. dilute.set_model(...)
 #   2. set_param lines: fix both SLDs (4.2 and 1.0); give radius, scale and
 #      background a value, bounds and vary=True.
-#   3. dilute_result = dilute.fit(engine='lmfit', method='least_squares')
+#   3. dilute.fit(engine='lmfit', method='least_squares')
 #   4. dilute.plot_results(show_residuals=True, log_scale=True)
-# Keep the names `dilute` and `dilute_result`: later cells use them.
+# Keep the name `dilute`: later cells use it.
 # Delete the `raise` line below when your lines are in place.
 raise NotImplementedError('Build and fit the dilute-sphere model, then delete this line')
 """
@@ -1142,7 +1156,7 @@ interacting.set_param('radius_effective', value=45, min=20, max=100, vary=True)
 interacting.set_param('volfraction', value=0.2, min=0.01, max=0.55, vary=True)
 interacting.get_params()
 
-interacting_result = interacting.fit(engine='lmfit', method='least_squares')
+interacting.fit(engine='lmfit', method='least_squares')
 interacting.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
@@ -1155,21 +1169,20 @@ interacting.load_data(str(filename))
 #   3. interacting.get_params() to see the new parameters.
 #   4. set_param lines for 'radius_effective' and 'volfraction' with vary=True.
 #      A hard-sphere volume fraction cannot exceed about 0.55.
-#   5. interacting_result = interacting.fit(engine='lmfit', method='least_squares')
+#   5. interacting.fit(engine='lmfit', method='least_squares')
 #   6. interacting.plot_results(show_residuals=True, log_scale=True)
-# Keep the name `interacting_result`: later cells use it.
+# Keep the name `interacting`: later cells use it.
 # Delete the `raise` line below when your lines are in place.
 raise NotImplementedError('Add, configure, and fit the structure factor, then delete this line')
 """
     )
-    comparison = """# Fit statistic for each model: lower is better, but only residuals and
-# physical plausibility make it a scientific conclusion.
-print('Form factor only:      ', dilute_result['chisq'])
-print('With structure factor: ', interacting_result['chisq'])
-
-# The fitted particle radius, interaction radius, and volume fraction.
-for name in ['radius', 'radius_effective', 'volfraction']:
-    print(name, interacting_result['parameters'][name]['formatted'])
+    comparison = """# The two fit reports. A lower reduced χ² is better, but only the residual
+# checks and physical plausibility make it a scientific conclusion.
+print('FORM FACTOR ONLY')
+print(dilute.get_fit_report())
+print()
+print('WITH HARD-SPHERE STRUCTURE FACTOR')
+print(interacting.get_fit_report())
 """
     cells = [
         markdown(
@@ -1304,11 +1317,15 @@ linked.set_param('scale', value=0.05, min=0.001, max=0.2, vary=True)
 linked.set_param('background', value=0.002, min=0, max=0.02, vary=True)
 linked.set_structure_factor('hardsphere', radius_effective_mode='link_radius')
 linked.set_param('volfraction', value=0.2, min=0.01, max=0.55, vary=True)
-linked_result = linked.fit(engine='lmfit', method='least_squares')
+linked.fit(engine='lmfit', method='least_squares')
 linked.plot_results(show_residuals=True, log_scale=True)
 
-print('Free effective radius:  ', interacting_result['chisq'])
-print('Linked effective radius:', linked_result['chisq'])
+free_report = interacting.get_fit_report()
+linked_report = linked.get_fit_report()
+print(f'Free effective radius:   reduced χ² = {free_report.reduced_chisq:.2f}')
+print(f'Linked effective radius: reduced χ² = {linked_report.reduced_chisq:.2f}')
+print()
+print(linked_report)
 """
         ),
         interpretation,
@@ -1378,14 +1395,14 @@ raise NotImplementedError('Configure the sphere model and its priors, then delet
 np.random.seed(2026)
 
 # A short, exploratory DREAM run sized for class time (about a minute).
-result = fitter.fit_bayesian(samples=1500, burn=100, thin=1, pop=10)
+fitter.fit_bayesian(samples=1500, burn=100, thin=1, pop=10)
 
 # Best sample from the posterior, with normalized residuals.
 fitter.plot_results(show_residuals=True, log_scale=True)
 """
         if solution
         else """# YOUR CODE HERE: two lines.
-#   1. result = fitter.fit_bayesian(samples=1500, burn=100, thin=1, pop=10)
+#   1. fitter.fit_bayesian(samples=1500, burn=100, thin=1, pop=10)
 #   2. fitter.plot_results(show_residuals=True, log_scale=True)
 # The seed below makes everyone's chains identical; leave it in place.
 np.random.seed(2026)
