@@ -894,6 +894,90 @@ class TestStructureFactorFitting(unittest.TestCase):
             raise
 
 
+class TestPolydispersity(unittest.TestCase):
+    """Test Gaussian size distributions on model parameters."""
+
+    def setUp(self):
+        """Create polydisperse sphere data and a configured fitter."""
+        from sasmodels.core import load_model
+        from sasmodels.data import empty_data1D
+        from sasmodels.direct_model import DirectModel
+
+        q = np.logspace(np.log10(0.003), np.log10(0.3), 80)
+        kernel = load_model('sphere', dtype='double', platform='dll')
+        intensity = DirectModel(empty_data1D(q), kernel)(
+            radius=100.0,
+            radius_pd=0.15,
+            radius_pd_n=35,
+            radius_pd_nsigma=3,
+            sld=3.5,
+            sld_solvent=-0.5,
+            scale=0.01,
+            background=0.1,
+        )
+        uncertainty = 0.03 * intensity + 0.003
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False)
+        temp_file.write('Q,I,dI\n')
+        for values in zip(q, intensity, uncertainty):
+            temp_file.write(','.join(str(value) for value in values) + '\n')
+        temp_file.close()
+        self.data_file = temp_file.name
+
+        self.fitter = SANSFitter()
+        self.fitter.load_data(self.data_file)
+        self.fitter.set_model('sphere')
+        self.fitter.set_param('sld', value=3.5, vary=False)
+        self.fitter.set_param('sld_solvent', value=-0.5, vary=False)
+        self.fitter.set_param('radius', value=80.0, min=20.0, max=200.0, vary=True)
+        self.fitter.set_param('scale', value=0.005, min=1e-4, max=0.1, vary=True)
+        self.fitter.set_param('background', value=0.05, min=0.0, max=1.0, vary=True)
+
+    def tearDown(self):
+        """Remove the temporary dataset."""
+        if os.path.exists(self.data_file):
+            os.unlink(self.data_file)
+
+    def test_adds_width_and_fixed_integration_parameters(self):
+        """Test that the width varies and the integration settings stay fixed."""
+        self.fitter.set_polydispersity('radius', width=0.1, max=0.4)
+        self.assertEqual(self.fitter.params['radius_pd']['value'], 0.1)
+        self.assertTrue(self.fitter.params['radius_pd']['vary'])
+        self.assertEqual(self.fitter.params['radius_pd']['max'], 0.4)
+        self.assertFalse(self.fitter.params['radius_pd_n']['vary'])
+        self.assertFalse(self.fitter.params['radius_pd_nsigma']['vary'])
+
+    def test_rejects_parameter_without_distribution(self):
+        """Test that a contrast parameter cannot be made polydisperse."""
+        with self.assertRaises(ValueError):
+            self.fitter.set_polydispersity('sld')
+
+    def test_requires_model(self):
+        """Test that a model must be loaded first."""
+        with self.assertRaises(ValueError):
+            SANSFitter().set_polydispersity('radius')
+
+    def test_survives_structure_factor_round_trip(self):
+        """Test that polydispersity is kept when a structure factor is added and removed."""
+        self.fitter.set_polydispersity('radius', width=0.1)
+        self.fitter.set_structure_factor('hardsphere')
+        self.assertIn('radius_pd', self.fitter.params)
+        self.fitter.remove_structure_factor()
+        self.assertIn('radius_pd', self.fitter.params)
+
+    def test_lmfit_recovers_width(self):
+        """Test that a least-squares fit recovers the generating width."""
+        self.fitter.set_polydispersity('radius', width=0.05, max=0.4)
+        result = self.fitter.fit(engine='lmfit', method='least_squares')
+        self.assertAlmostEqual(result['parameters']['radius']['value'], 100.0, delta=2.0)
+        self.assertAlmostEqual(result['parameters']['radius_pd']['value'], 0.15, delta=0.02)
+
+    def test_bumps_fit_includes_width(self):
+        """Test that the BUMPS engine fits the width as a parameter."""
+        self.fitter.set_polydispersity('radius', width=0.05, max=0.4)
+        result = self.fitter.fit(engine='bumps', method='amoeba')
+        self.assertIn('radius_pd', result['parameters'])
+
+
 if __name__ == '__main__':
     # Run tests with verbosity
     unittest.main(verbosity=2)

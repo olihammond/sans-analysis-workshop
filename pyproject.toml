@@ -62,6 +62,7 @@ format = "ruff format src/ tests/ scripts/"
 format-check = "ruff format --check src/ tests/ scripts/"
 workshop = "jupyter lab exercises"
 generate-workshop-data = "python scripts/generate_workshop.py --data-only"
+generate-mystery-data = "python scripts/generate_mystery_data.py"
 check-workshop = "python scripts/generate_workshop.py --check"
 
 [tool.ruff]

@@ -93,13 +93,24 @@ fitting API in small steps, then use `YOUR CODE HERE` cells and deliberate
 `NotImplementedError` stops to require students to complete each analysis.
 Fully executable reference copies are in [`solutions/`](solutions/).
 
+### Mystery-sample report
+
+After the workbooks, each student picks one of six unlabelled datasets in
+[`mystery_data/`](mystery_data/), works out what is in the beam, and writes a
+short report on the fit and the physical interpretation. The folder README
+gives each sample's composition, conditions and SLDs, the hints students need
+(including `set_polydispersity` for size distributions), and the report
+structure. These datasets are in absolute units (cm⁻¹), so fitted volume
+fractions can be checked against the stated concentrations.
+
 ## Repository layout
 
 ```text
 .
 ├── data/             # Checked-in synthetic SANS datasets
 ├── exercises/        # Student workbooks
-├── instructor/       # Dataset ground truth
+├── instructor/       # Dataset ground truth and mystery-sample answer key
+├── mystery_data/     # Six unlabelled datasets for the report exercise
 ├── scripts/          # Reproducible material generator
 ├── solutions/        # Worked and executable notebooks
 ├── src/sans_fitter/  # Bundled teaching-oriented fitting helper
@@ -114,7 +125,9 @@ intensity in arbitrary units:
 - `interacting_spheres.csv`: spheres with a hard-sphere interaction peak.
 
 Their fixed generation seed and source parameters are recorded in
-[`instructor/ground_truth.json`](instructor/ground_truth.json).
+[`instructor/ground_truth.json`](instructor/ground_truth.json). The models,
+parameters and expected interpretation of the mystery samples are in
+[`instructor/mystery_ground_truth.json`](instructor/mystery_ground_truth.json).
 
 ## Instructor guidance
 
@@ -128,6 +141,10 @@ Their fixed generation seed and source parameters are recorded in
   introducing the structure factor.
 - End by asking what additional measurement would distinguish each pair of
   competing physical explanations.
+- For the mystery-sample report, check that each sample has a student
+  before the session. Samples D (silica) and F (polymer) are the most direct.
+  A (block-copolymer micelles with interactions) and E (bicontinuous
+  microemulsion) are the most demanding.
 
 ## Maintaining the materials
 

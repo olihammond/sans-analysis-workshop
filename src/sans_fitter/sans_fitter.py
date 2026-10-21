@@ -34,6 +34,9 @@ except ImportError:
     warnings.warn('scipy not available. Only bumps engine will work.', stacklevel=2)
 
 
+_PD_SUFFIXES = ('_pd', '_pd_n', '_pd_nsigma')
+
+
 def _model_name_hint(model_name: str) -> str:
     """Return a short hint naming the SasModels models closest to ``model_name``."""
     try:
@@ -396,6 +399,11 @@ class SANSFitter:
                         'description': 'Constant background level',
                     }
 
+            # Carry over polydispersity settings of the form factor
+            for name, info in self._form_factor_params.items():
+                if name.endswith(_PD_SUFFIXES) and name not in new_params:
+                    new_params[name] = dict(info)
+
             self.params = new_params
 
             if 'radius_effective_mode' in self.params:
@@ -424,6 +432,76 @@ class SANSFitter:
         except Exception as e:
             raise ValueError(f"Failed to load model '{full_model_name}': {str(e)}") from e
 
+    def set_polydispersity(
+        self,
+        name: str,
+        width: float = 0.1,
+        min: float = 0.0,
+        max: float = 0.5,
+        vary: bool = True,
+        n_points: int = 35,
+        n_sigmas: float = 3.0,
+    ) -> None:
+        """
+        Give a size parameter a Gaussian distribution (polydispersity).
+
+        SasModels then averages the scattering over a Gaussian distribution of
+        ``name`` with relative width ``width`` (standard deviation divided by
+        the mean, e.g. 0.1 for 10 %). This adds a fittable parameter called
+        ``f'{name}_pd'``, plus fixed integration settings ``f'{name}_pd_n'`` and
+        ``f'{name}_pd_nsigma'``.
+
+        Args:
+            name: Size parameter of the current model, e.g. 'radius'
+            width: Initial relative width of the distribution
+            min: Lower bound for the width
+            max: Upper bound for the width
+            vary: Whether to fit the width
+            n_points: Number of points used to integrate over the distribution
+            n_sigmas: Distribution range in standard deviations
+
+        Raises:
+            ValueError: If no model is loaded or the parameter cannot be polydisperse
+        """
+        if self.kernel is None:
+            raise ValueError('No model loaded. Use set_model() first.')
+        allowed = [
+            parameter.name
+            for parameter in self.kernel.info.parameters.kernel_parameters
+            if parameter.polydisperse and parameter.type != 'orientation'
+        ]
+        if name not in allowed:
+            raise ValueError(
+                f"Parameter '{name}' cannot be polydisperse in this model. "
+                f'Choose one of: {", ".join(allowed) or "(none)"}'
+            )
+
+        self.params[f'{name}_pd'] = {
+            'value': width,
+            'min': min,
+            'max': max,
+            'vary': vary,
+            'description': f'Relative width (sigma/mean) of the {name} distribution',
+        }
+        self.params[f'{name}_pd_n'] = {
+            'value': n_points,
+            'min': n_points,
+            'max': n_points,
+            'vary': False,
+            'description': f'Integration points for the {name} distribution',
+        }
+        self.params[f'{name}_pd_nsigma'] = {
+            'value': n_sigmas,
+            'min': n_sigmas,
+            'max': n_sigmas,
+            'vary': False,
+            'description': f'Integration range for the {name} distribution, in sigma',
+        }
+        if self._structure_factor_name is not None:
+            for suffix in _PD_SUFFIXES:
+                self._form_factor_params[f'{name}{suffix}'] = dict(self.params[f'{name}{suffix}'])
+        print(f"✓ Gaussian polydispersity on '{name}' (initial width {width:g})")
+
     def remove_structure_factor(self) -> None:
         """
         Remove the current structure factor and revert to the form factor only.
@@ -436,7 +514,7 @@ class SANSFitter:
 
         # Reload the original form factor model
         try:
-            self.kernel = load_model(self.model_name, dtype='single', platform='dll')
+            self.kernel = load_model(self.model_name, dtype='double', platform='dll')
 
             # Restore form factor parameters
             self.params = {k: dict(v) for k, v in self._form_factor_params.items()}

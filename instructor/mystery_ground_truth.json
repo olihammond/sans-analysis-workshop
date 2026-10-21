@@ -1,0 +1,93 @@
+{
+  "seed": 20261021,
+  "units": "I in cm^-1, q in Å^-1, SLD in 10^-6 Å^-2",
+  "samples": {
+    "A": {
+      "model": "core_shell_sphere@hardsphere",
+      "parameters": {
+        "radius": 48.0,
+        "radius_pd": 0.1,
+        "radius_pd_n": 35,
+        "radius_pd_nsigma": 3,
+        "thickness": 32.0,
+        "sld_core": 0.34,
+        "sld_shell": 5.75,
+        "sld_solvent": 6.36,
+        "radius_effective": 80.0,
+        "radius_effective_mode": 0,
+        "volfraction": 0.16,
+        "scale": 1.0,
+        "background": 0.07
+      },
+      "answer": "Spherical block-copolymer micelles: dry PPO core (R ≈ 48 Å, 10 % polydisperse) with a highly hydrated PEO corona (≈ 32 Å, ≈ 89 % D2O, so weak contrast). Concentrated enough for a hard-sphere S(Q) with effective radius ≈ 80 Å (core + corona) and micelle volume fraction ≈ 0.16. Aggregation number ≈ 70 from the core volume. Pitfall: sphere@hardsphere with the core contrast fails (reduced χ² ≈ 50) because one volfraction cannot be both the core and the micelle volume fraction; the corona must be in the model."
+    },
+    "B": {
+      "model": "cylinder",
+      "parameters": {
+        "radius": 21.0,
+        "length": 800.0,
+        "length_pd": 0.3,
+        "length_pd_n": 35,
+        "length_pd_nsigma": 3,
+        "sld": -0.37,
+        "sld_solvent": 6.36,
+        "scale": 0.0041,
+        "background": 0.05
+      },
+      "answer": "Rod-like (short wormlike) micelles: cylinder radius ≈ 21 Å, matching the extended C16 chain length (Tanford: 1.5 + 1.265 × 16 ≈ 21.7 Å); length ≈ 800 Å with 30 % polydispersity. Volume fraction of tails ≈ 0.004, matching 15 mM CTAB. Q⁻¹ region between the two Guinier knees."
+    },
+    "C": {
+      "model": "vesicle",
+      "parameters": {
+        "radius": 240.0,
+        "radius_pd": 0.22,
+        "radius_pd_n": 35,
+        "radius_pd_nsigma": 3,
+        "thickness": 38.0,
+        "sld": 0.3,
+        "sld_solvent": 6.36,
+        "volfraction": 0.0099,
+        "scale": 1.0,
+        "background": 0.05
+      },
+      "answer": "Unilamellar vesicles: core radius ≈ 240 Å (22 % polydisperse), bilayer thickness ≈ 38 Å (typical for DOPC). Q⁻² mid-q region from the thin shell; the bilayer thickness sets the high-q drop. Shell volume fraction ≈ 0.01, matching 10 mg/mL. In the vesicle model, keep scale = 1 and fit volfraction."
+    },
+    "D": {
+      "model": "sphere",
+      "parameters": {
+        "radius": 110.0,
+        "radius_pd": 0.12,
+        "radius_pd_n": 35,
+        "radius_pd_nsigma": 3,
+        "sld": 3.47,
+        "sld_solvent": -0.56,
+        "scale": 0.0092,
+        "background": 0.95
+      },
+      "answer": "Dilute polydisperse spheres: R ≈ 110 Å (diameter 22 nm), 12 % Gaussian polydispersity, which smears the minima. Volume fraction ≈ 0.009 (2 wt% / 2.2 g/cm³). High flat background (≈ 0.95 cm⁻¹) from H2O incoherent scattering."
+    },
+    "E": {
+      "model": "teubner_strey",
+      "parameters": {
+        "volfraction_a": 0.45,
+        "sld_a": -0.49,
+        "sld_b": 6.36,
+        "d": 260.0,
+        "xi": 95.0,
+        "scale": 1.0,
+        "background": 0.25
+      },
+      "answer": "Bicontinuous microemulsion (Teubner–Strey): broad peak at Q ≈ 0.022 Å⁻¹, repeat distance d ≈ 260 Å, correlation length ξ ≈ 95 Å (d/ξ ≈ 2.7, a weakly ordered sponge). Q⁻⁴ (Porod) decay from sharp oil–water interfaces. Not a droplet form factor: no Guinier plateau, peak without dilute-particle oscillations. The model depends on volfraction_a only through φ(1 − φ), so 0.45 and 0.55 fit equally well; the card decides which."
+    },
+    "F": {
+      "model": "polymer_excl_volume",
+      "parameters": {
+        "rg": 68.0,
+        "porod_exp": 1.67,
+        "scale": 0.85,
+        "background": 0.06
+      },
+      "answer": "Polymer coil in good solvent: Rg ≈ 68 Å and power-law exponent ≈ 5/3 (Flory ν = 3/5, swollen coil). I(0) ≈ 0.85 cm⁻¹ is consistent with M ≈ 20 kg/mol via I(0) = φ V Δρ². In polymer_excl_volume, scale is I(0), not a volume fraction."
+    }
+  }
+}

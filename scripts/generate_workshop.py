@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+from generate_mystery_data import write_mystery_datasets
 from sasmodels.core import load_model
 from sasmodels.data import empty_data1D
 from sasmodels.direct_model import DirectModel
@@ -1537,6 +1538,7 @@ def main() -> None:
     args = parser.parse_args()
 
     write_datasets()
+    write_mystery_datasets()
     if not args.data_only:
         write_notebooks()
     if args.check:
